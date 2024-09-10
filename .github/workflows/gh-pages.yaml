@@ -23,6 +23,7 @@ jobs:
       run: |
         pip install sphinx sphinx-autodoc-typehints sphinx_book_theme sphinx-copybutton
         pip install nbsphinx recommonmark Pygments
+        pip install pandoc
 
     - name: Build the docs
       run: |
