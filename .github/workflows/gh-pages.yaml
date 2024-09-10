@@ -6,6 +6,9 @@ on:
       # - main  # You can change this to your default branch
       - docs
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
