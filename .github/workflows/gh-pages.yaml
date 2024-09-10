@@ -19,6 +19,11 @@ jobs:
       with:
         python-version: '3.9'
 
+    - name: Set up Pandoc
+      uses: actions/setup-pandoc@v1
+      with:
+        pandoc-version: 'latest' 
+
     - name: Install dependencies
       run: |
         pip install sphinx sphinx-autodoc-typehints sphinx_book_theme sphinx-copybutton
