@@ -1,0 +1,45 @@
+name: Build and Test with Mamba
+
+on:
+  push:
+    branches:
+      - main
+      - build-actions
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Micromamba
+      uses: mamba-org/setup-micromamba@v1
+      with:
+        micromamba-version: 'latest' # any version from https://github.com/mamba-org/micromamba-releases
+        environment-file: environment.yaml
+        init-shell: >-
+          bash
+        cache-environment: true
+        post-cleanup: 'all'
+
+    - name: Install dependencies
+      run: |
+        micromamba run -n mattersim pip install .
+
+    - name: Save Conda environment as artifact
+      run: |
+        tar -czf mattersim-env.tar.gz -C $MAMBA_ROOT_PREFIX/envs/mattersim .
+      continue-on-error: true
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: mattersim-env
+        path: mattersim-env.tar.gz
+
+  
