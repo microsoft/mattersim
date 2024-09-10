@@ -3,8 +3,11 @@ name: Deploy Documentation to GitHub Pages
 on:
   push:
     branches:
-      # - main  # You can change this to your default branch
-      - docs
+      - main
+    
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
