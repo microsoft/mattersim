@@ -32,7 +32,7 @@ templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 html_theme = "sphinx_book_theme"
 html_theme_options = {
-    "repository_url": "https://www.github.com",
+    "repository_url": "https://github.com/microsoft/mattersim",
     "repository_provider": "github",
     "use_repository_button": True,
 }
