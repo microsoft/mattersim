@@ -1,0 +1,36 @@
+name: Deploy Documentation to GitHub Pages
+
+on:
+  push:
+    branches:
+      # - main  # You can change this to your default branch
+      - docs
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        pip install sphinx sphinx-autodoc-typehints sphinx_book_theme sphinx-copybutton
+        pip install nbsphinx recommonmark Pygments
+
+    - name: Build the docs
+      run: |
+        cd docs
+        make html
+
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./docs/_build/html
