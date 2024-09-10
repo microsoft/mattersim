@@ -10,7 +10,7 @@ on:
       - main
 
 jobs:
-  build:
+  build_and_test:
     runs-on: ubuntu-latest
 
     steps:
@@ -29,38 +29,8 @@ jobs:
 
     - name: Install dependencies
       run: |
-        micromamba run -n mattersim pip install .
+        micromamba run -n mattersim pip install -e .
 
-    - name: Save Conda environment as artifact
+    - name: Run tests
       run: |
-        tar -czf mattersim-env.tar.gz -C $MAMBA_ROOT_PREFIX/envs/mattersim .
-      continue-on-error: true
-
-    - name: Upload artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: mattersim-env
-        path: mattersim-env.tar.gz
-  
-  test:
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-
-    - name: Download artifact
-      uses: actions/download-artifact@v3
-      with:
-        name: mattersim-env
-
-    - name: Extract environment
-      run: |
-        mkdir -p $HOME/micromamba/envs/mattersim
-        tar -xzf mattersim-env.tar.gz -C $HOME/micromamba/envs/mattersim/
-        micromamba shell init -s bash -p $HOME/micromamba
-        source ~/.bashrc
         micromamba run -n mattersim pytest -s tests
-
-  
