@@ -1,0 +1,23 @@
+name: mattersim
+channels:
+  - pyg
+  - pytorch
+  - conda-forge
+dependencies:
+  - python=3.9
+  - pytorch==1.11.0
+  - pytorch-sparse=0.6.15
+  - pytorch-scatter=2.0.9
+  - ca-certificates
+  - openssl
+  - numpy<2
+  - phonopy==2.14.0
+  - phono3py==2.3.0
+  - cython
+  - loguru
+  - pip:
+    - seekpath
+    - torch==1.11.0+cu113
+    - torchvision==0.12.0+cu113
+    - torchaudio==0.11.0
+    - --extra-index-url https://download.pytorch.org/whl/cu113
