@@ -20,9 +20,10 @@ jobs:
         python-version: '3.9'
 
     - name: Set up Pandoc
-      uses: actions/setup-pandoc@v1
-      with:
-        pandoc-version: 'latest' 
+      uses: docker://pandoc/core:2.9
+      # uses: actions/setup-pandoc@v1
+      # with:
+        # pandoc-version: 'latest' 
 
     - name: Install dependencies
       run: |
