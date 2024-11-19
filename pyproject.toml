@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "Cython>=0.29.32", "numpy<2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mattersim"
+version = "1.0"
+description = "MatterSim: A Deep Learning Atomistic Model Across Elements, Temperatures and Pressures."
+authors = [
+    {name = "Han Yang", email = "hanyang@microsoft.com"},
+    {name = "Jielan Li", email = "jielanli@microsoft.com"},
+    {name = "Hongxia Hao", email = "hongxiahao@microsoft.com"},
+    {name = "Ziheng Lu", email = "zihenglu@microsoft.com"}
+]
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "ase>=3.23.0",
+    "e3nn==0.5.0",
+    "numpy<2",
+    "pymatgen",
+    "torch_geometric==2.5.3",
+    "torch==1.11.0",
+    "torch_runstats==0.2.0",
+    "torchmetrics>=0.10.0",
+    "torch-ema==0.3",
+    "opt_einsum_fx",
+    "azure-storage-blob",
+    "azure-identity",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-testmon",
+    "pre-commit"
+]
+
+
+[project.urls]
+"Homepage" = "https://github.com/msr-ai4science/mattersim"
+"Bug Tracker" = "https://github.com/msr-ai4science/mattersim/issues"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["mattersim", "mattersim.*"]
