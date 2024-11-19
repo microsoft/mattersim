@@ -30,6 +30,10 @@ jobs:
       run: |
         micromamba run -n mattersim pip install -e .
 
+    - name: Install test dependencies
+      run: |
+        micromamba run -n mattersim pip install -e ".[dev]"
+
     - name: Run tests
       run: |
         micromamba run -n mattersim pytest -s tests
