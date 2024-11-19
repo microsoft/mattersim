@@ -25,7 +25,7 @@ dependencies = [
     "numpy<2",
     "pymatgen",
     "torch_geometric==2.5.3",
-    "torch==1.11.0",
+    "torch==2.2.0",
     "torch_runstats==0.2.0",
     "torchmetrics>=0.10.0",
     "torch-ema==0.3",
