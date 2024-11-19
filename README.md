@@ -11,10 +11,6 @@
 MatterSim is a deep learning atomistic model across elements, temperatures and pressures.
 
 ## Installation
-### Install from PyPI
-TODO: To be released to PyPI.
-
-
 ### Install from source code
 Requirements:
 - Python == 3.9
@@ -24,12 +20,6 @@ To install the package, run the following command under the root of the folder:
 conda env create -f environment.yaml
 conda activate mattersim
 pip install -e .
-```
-
-### Obtain the model checkpoints
-You may obtain our model checkpoints from
-```bash
-# link to somewhere
 ```
 
 ## Usage
@@ -57,6 +47,13 @@ If you use MatterSim, please cite our preprint on [arXiv](https://arxiv.org/abs/
   year={2024}
 }
 ```
+
+## Trademarks
+
+This project may contain trademarks or logos for projects, products, or services.
+Authorized use of Microsoft trademarks or logos is subject to and must follow [Microsoft's Trademark & Brand Guidelines](https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks/usage/general).
+Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship.
+Any use of third-party trademarks or logos are subject to those third-party's policies.
 
 ## Researcher and Developers
 MatterSim is currently in active development. If you have any specific research interests related to this model or encounter any issues, please don't hesitate to reach out to us.
