@@ -43,6 +43,8 @@ html_theme_options = {
 
 html_static_path = ["_static"]
 
+html_logo = "_static/mattersim.png"
+
 # -- Options for nbsphinx ----------------------------------------------------
 nbsphinx_allow_errors = True
 nbsphinx_execute = "never"

@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="assets/mattersim.png" alt="MatterSim logo" width="200"/>
+    <img src="docs/_static/mattersim.png" alt="MatterSim logo" width="200"/>
 </p>
 
 <h1 align="center">MatterSim</h1>
