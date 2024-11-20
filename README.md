@@ -1,3 +1,7 @@
+<p align="center">
+    <img src="assets/mattersim.png" alt="MatterSim logo" width="200"/>
+</p>
+
 <h1 align="center">MatterSim</h1>
 
 <h4 align="center">
