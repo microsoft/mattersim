@@ -2,12 +2,6 @@
 Installation
 ============
 
-Install from PyPI
------------------
-
-TODO: To be released to PyPI.
-
-
 Install from source code
 ------------------------
 
