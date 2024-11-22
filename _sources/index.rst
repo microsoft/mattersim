@@ -23,8 +23,8 @@ Pre-trained Models
 
 We currently offer two pre-trained versions of MatterSim with **M3GNet** architecture:
 
-1. **mattersim-mini-v1.0.0**: A mini version of the model that is faster to run. 
-2. **mattersim-medium-v1.0.0**: A medium version of the model that is more accurate.
+1. **mattersim-v1.0.0-1M**: A mini version of the model that is faster to run. 
+2. **mattersim-v1.0.0-5M**: A medium version of the model that is more accurate.
 
 These models have been trained using the data generated through the workflows 
 introduced in the `MatterSim <https://arxiv.org/abs/2405.04967>`_ manuscript, which provides an in-depth 

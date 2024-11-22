@@ -334,6 +334,7 @@
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import numpy as np
 from ase.build import bulk
+from ase.units import GPa
 from ase.visualize import view
 from mattersim.forcefield.potential import Potential, DeepCalculator
 from mattersim.applications.phonon import PhononWorkflow
@@ -362,7 +363,7 @@ si = bulk(&quot;Si&quot;)
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># create MatterSim calculator
 potential = Potential.load(load_path=&quot;/path/to/checkpoint&quot;)
-calc = DeepCalculator(potential=potential)
+calc = DeepCalculator(potential=potential, stress_weight=GPa)
 </pre></div>
 </div>
 </div>
@@ -387,7 +388,7 @@ si.calc = calc
     find_prim = False,
     work_dir = &quot;/tmp/phonon_si_example&quot;,
     amplitude = 0.01,
-    supercell_matrix = np.diag([2,2,2]),
+    supercell_matrix = np.diag([4,4,4]),
 )
 has_imag, phonons = ph.run()
 print(f&quot;Has imaginary phonon: {has_imag}&quot;)
@@ -398,21 +399,32 @@ print(f&quot;Phonon frequencies: {phonons}&quot;)
 <div class="nboutput docutils container">
 <div class="prompt empty docutils container">
 </div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Supercell matrix for 2nd force constants :
+[[4 0 0]
+ [0 4 0]
+ [0 0 4]]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-/home/hanyang/miniforge3/envs/mattersim/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;transformation_matrix&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
+/home/hanyang/miniforge3/envs/mattersim-public/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;transformation_matrix&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
   warnings.warn(
-/home/hanyang/miniforge3/envs/mattersim/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;international&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
+/home/hanyang/miniforge3/envs/mattersim-public/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;international&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
   warnings.warn(
-/home/hanyang/miniforge3/envs/mattersim/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;rotations&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
+/home/hanyang/miniforge3/envs/mattersim-public/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;rotations&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
   warnings.warn(
-/home/hanyang/miniforge3/envs/mattersim/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;translations&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
+/home/hanyang/miniforge3/envs/mattersim-public/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;translations&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
   warnings.warn(
-/home/hanyang/miniforge3/envs/mattersim/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;number&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
+/home/hanyang/miniforge3/envs/mattersim-public/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;number&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
   warnings.warn(
-/home/hanyang/miniforge3/envs/mattersim/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;wyckoffs&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
+/home/hanyang/miniforge3/envs/mattersim-public/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;wyckoffs&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
   warnings.warn(
-/home/hanyang/miniforge3/envs/mattersim/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;equivalent_atoms&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
+/home/hanyang/miniforge3/envs/mattersim-public/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;equivalent_atoms&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
   warnings.warn(
 </pre></div></div>
 </div>
@@ -421,10 +433,6 @@ print(f&quot;Phonon frequencies: {phonons}&quot;)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Supercell matrix for 2nd force constants :
-[[2 0 0]
- [0 2 0]
- [0 0 2]]
 
 
 Inferring forces for displaced atoms and computing fcs ...
@@ -435,14 +443,14 @@ Inferring forces for displaced atoms and computing fcs ...
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-  0%|          | 0/1 [00:00&lt;?, ?it/s]100%|██████████| 1/1 [00:00&lt;00:00,  1.19it/s]
-/home/hanyang/miniforge3/envs/mattersim/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;std_lattice&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
+100%|██████████| 1/1 [00:00&lt;00:00,  3.64it/s]
+/home/hanyang/miniforge3/envs/mattersim-public/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;std_lattice&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
   warnings.warn(
-/home/hanyang/miniforge3/envs/mattersim/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;std_positions&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
+/home/hanyang/miniforge3/envs/mattersim-public/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;std_positions&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
   warnings.warn(
-/home/hanyang/miniforge3/envs/mattersim/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;std_types&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
+/home/hanyang/miniforge3/envs/mattersim-public/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;std_types&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
   warnings.warn(
-/home/hanyang/miniforge3/envs/mattersim/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;std_rotation_matrix&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
+/home/hanyang/miniforge3/envs/mattersim-public/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;std_rotation_matrix&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
   warnings.warn(
 </pre></div></div>
 </div>
@@ -451,13 +459,11 @@ Inferring forces for displaced atoms and computing fcs ...
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Max drift of force constants: 0.000003 (xx) 0.000003 (yy)
-Max drift after symmetrization by translation: 0.000000 (zz) 0.000000 (zz)
-Qpoints mesh for Brillouin Zone integration : [12 12 12]
+Max drift of force constants: -0.000009 (yy) -0.000009 (zz)
+Max drift after symmetrization by translation: -0.000000 (xx) -0.000000 (xx)
+Qpoints mesh for Brillouin Zone integration : [24 24 24]
 Dispersion relations using phonopy for Si2 ...
 
-Has imaginary phonon: False
-Phonon frequencies: &lt;phonopy.api_phonopy.Phonopy object at 0x7af8347654c0&gt;
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -465,13 +471,11 @@ Phonon frequencies: &lt;phonopy.api_phonopy.Phonopy object at 0x7af8347654c0&gt;
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-/home/hanyang/miniforge3/envs/mattersim/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;uni_number&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
+/home/hanyang/miniforge3/envs/mattersim-public/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;international&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
   warnings.warn(
-/home/hanyang/miniforge3/envs/mattersim/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;international&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
+/home/hanyang/miniforge3/envs/mattersim-public/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;number&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
   warnings.warn(
-/home/hanyang/miniforge3/envs/mattersim/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;number&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
-  warnings.warn(
-/home/hanyang/miniforge3/envs/mattersim/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;hall&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
+/home/hanyang/miniforge3/envs/mattersim-public/lib/python3.9/site-packages/spglib/spglib.py:115: DeprecationWarning: dict interface (SpglibDataset[&#39;hall&#39;]) is deprecated.Use attribute interface ({self.__class__.__name__}.{key}) instead
   warnings.warn(
 </pre></div></div>
 </div>
@@ -479,14 +483,23 @@ Phonon frequencies: &lt;phonopy.api_phonopy.Phonopy object at 0x7af8347654c0&gt;
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/examples_phonon_example_7_5.png" class="no-scaled-link" src="../_images/examples_phonon_example_7_5.png" style="width: 563px; height: 394px;" />
+<div class="highlight"><pre>
+Has imaginary phonon: False
+Phonon frequencies: &lt;phonopy.api_phonopy.Phonopy object at 0x7cb2848fe7c0&gt;
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_phonon_example_7_7.png" class="no-scaled-link" src="../_images/examples_phonon_example_7_7.png" style="width: 563px; height: 394px;" />
 </div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/examples_phonon_example_7_6.png" class="no-scaled-link" src="../_images/examples_phonon_example_7_6.png" style="width: 562px; height: 428px;" />
+<img alt="../_images/examples_phonon_example_7_8.png" class="no-scaled-link" src="../_images/examples_phonon_example_7_8.png" style="width: 562px; height: 428px;" />
 </div>
 </div>
 <div class="nbinput docutils container">

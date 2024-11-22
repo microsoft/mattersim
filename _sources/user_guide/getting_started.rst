@@ -40,6 +40,7 @@ MatterSim provides an interface to the Atomic Simulation Environment (ASE) to fa
     :linenos:
 
     from ase.build import bulk
+    from ase.units import GPa
     from mattersim.forcefield.potential import DeepCalculator
 
     # same as before
@@ -50,7 +51,7 @@ MatterSim provides an interface to the Atomic Simulation Environment (ASE) to fa
     calculator = DeepCalculator(
         potential=potential,
         # important! convert GPa to eV/Angstrom^3
-        stress_weight=1 / 160.21766208,
+        stress_weight=GPa,
     )
 
     si.calc = calculator

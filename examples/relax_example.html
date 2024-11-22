@@ -313,7 +313,7 @@
                 <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#import-the-necessary-modules">1.1. Import the necessary modules</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#set-up-the-structure-to-relax">1.2. Set up the structure to relax</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#create-the-optimizer">1.3. Create the optimizer</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#run-the-relaxation">1.3. Run the relaxation</a></li>
 </ul>
             </nav>
         </div>
@@ -332,8 +332,10 @@
 <h2><span class="section-number">1.1. </span>Import the necessary modules<a class="headerlink" href="#import-the-necessary-modules" title="Link to this heading">#</a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">ase.build</span> <span class="kn">import</span> <span class="n">bulk</span>
+<span class="kn">from</span> <span class="nn">ase.units</span> <span class="kn">import</span> <span class="n">GPa</span>
 <span class="kn">from</span> <span class="nn">mattersim.forcefield.potential</span> <span class="kn">import</span> <span class="n">Potential</span>
 <span class="kn">from</span> <span class="nn">mattersim.forcefield.potential</span> <span class="kn">import</span> <span class="n">DeepCalculator</span>
+<span class="kn">from</span> <span class="nn">mattersim.applications.relax</span> <span class="kn">import</span> <span class="n">Relaxer</span>
 </pre></div>
 </div>
 </section>
@@ -349,16 +351,26 @@
 <span class="n">potential</span> <span class="o">=</span> <span class="n">Potential</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">load_path</span><span class="o">=</span><span class="s2">&quot;/path/to/checkpoint&quot;</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda:0&quot;</span><span class="p">)</span>
 
 <span class="c1"># create a calculator from the model</span>
-<span class="n">calculator</span> <span class="o">=</span> <span class="n">DeepCalculator</span><span class="p">(</span><span class="n">potential</span><span class="o">=</span><span class="n">potential</span><span class="p">)</span>
+<span class="n">calc</span> <span class="o">=</span> <span class="n">DeepCalculator</span><span class="p">(</span><span class="n">potential</span><span class="o">=</span><span class="n">potential</span><span class="p">,</span> <span class="n">stress_weight</span><span class="o">=</span><span class="n">GPa</span><span class="p">)</span>
 
 <span class="c1"># attach the calculator to the atoms object</span>
-<span class="n">si</span><span class="o">.</span><span class="n">calc</span> <span class="o">=</span> <span class="n">calculator</span>
+<span class="n">si</span><span class="o">.</span><span class="n">calc</span> <span class="o">=</span> <span class="n">calc</span>
 </pre></div>
 </div>
 </section>
-<section id="create-the-optimizer">
-<h2><span class="section-number">1.3. </span>Create the optimizer<a class="headerlink" href="#create-the-optimizer" title="Link to this heading">#</a></h2>
+<section id="run-the-relaxation">
+<h2><span class="section-number">1.3. </span>Run the relaxation<a class="headerlink" href="#run-the-relaxation" title="Link to this heading">#</a></h2>
 <p>MatterSim implements a built-in relaxation class to support the relaxation of ase atoms.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># initialize the relaxation object</span>
+<span class="n">relaxer</span> <span class="o">=</span> <span class="n">Relaxer</span><span class="p">(</span>
+    <span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;BFGS&quot;</span><span class="p">,</span> <span class="c1"># the optimization method</span>
+    <span class="nb">filter</span><span class="o">=</span><span class="s2">&quot;ExpCellFilter&quot;</span><span class="p">,</span> <span class="c1"># filter to apply to the cell</span>
+    <span class="n">constrain_symmetry</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="c1"># whether to constrain the symmetry</span>
+<span class="p">)</span>
+
+<span class="n">relaxed_structure</span> <span class="o">=</span> <span class="n">relaxer</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">si</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+</pre></div>
+</div>
 </section>
 </section>
 
@@ -410,7 +422,7 @@
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#import-the-necessary-modules">1.1. Import the necessary modules</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#set-up-the-structure-to-relax">1.2. Set up the structure to relax</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#create-the-optimizer">1.3. Create the optimizer</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#run-the-relaxation">1.3. Run the relaxation</a></li>
 </ul>
   </nav></div>
 
