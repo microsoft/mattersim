@@ -33,6 +33,8 @@ dependencies = [
     "opt_einsum_fx",
     "azure-storage-blob",
     "azure-identity",
+    "mp_api",
+    "emmet-core<0.84"
 ]
 
 [project.optional-dependencies]
@@ -44,8 +46,8 @@ dev = [
 
 
 [project.urls]
-"Homepage" = "https://github.com/msr-ai4science/mattersim"
-"Bug Tracker" = "https://github.com/msr-ai4science/mattersim/issues"
+"Homepage" = "https://github.com/microsoft/mattersim"
+"Bug Tracker" = "https://github.com/microsoft/mattersim/issues"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
