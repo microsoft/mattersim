@@ -20,6 +20,7 @@ To install the package, run the following command under the root of the folder:
 conda env create -f environment.yaml
 conda activate mattersim
 pip install -e .
+python setup.py build_ext --inplace
 ```
 
 ## Usage
