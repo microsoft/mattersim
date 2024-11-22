@@ -1,8 +1,10 @@
+<h1>
 <p align="center">
-    <img src="docs/_static/mattersim.png" alt="MatterSim logo" width="200"/>
+    <img src="docs/_static/mattersim-banner.jpg" alt="MatterSim logo" width="600"/>
 </p>
+</h1>
 
-<h1 align="center">MatterSim</h1>
+<!-- <h1 align="center">MatterSim</h1> -->
 
 <h4 align="center">
 

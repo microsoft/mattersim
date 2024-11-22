@@ -8,7 +8,6 @@ Install from source code
 Requirements:
 
 * Python == 3.9
-* PyTorch == 1.11.0
 
 To install the package, run the following command under the root of the folder:
 
