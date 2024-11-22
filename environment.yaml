@@ -3,11 +3,15 @@ channels:
   - pyg
   - pytorch
   - conda-forge
+  - nvidia
 dependencies:
   - python=3.9
-  - pytorch==1.11.0
-  - pytorch-sparse=0.6.15
-  - pytorch-scatter=2.0.9
+  - pytorch-sparse
+  - pytorch-scatter
+  - pytorch==2.2.0
+  - torchvision==0.17.0
+  - torchaudio==2.2.0
+  - pytorch-cuda=11.8
   - ca-certificates
   - openssl
   - numpy<2
@@ -15,9 +19,3 @@ dependencies:
   - phono3py==2.3.0
   - cython
   - loguru
-  - pip:
-    - seekpath
-    - torch==1.11.0+cu113
-    - torchvision==0.12.0+cu113
-    - torchaudio==0.11.0+cu113
-    - --extra-index-url https://download.pytorch.org/whl/cu113

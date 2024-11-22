@@ -22,6 +22,7 @@ classifiers = [
 dependencies = [
     "ase>=3.23.0",
     "e3nn==0.5.0",
+    "seekpath",
     "numpy<2",
     "pymatgen",
     "torch_geometric==2.5.3",
