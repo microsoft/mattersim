@@ -33,8 +33,9 @@ dependencies = [
     "opt_einsum_fx",
     "azure-storage-blob",
     "azure-identity",
-    "mp_api",
-    "emmet-core<0.84"
+    "mp-api",
+    "emmet-core<0.84",
+    "pydantic==2.9.2"
 ]
 
 [project.optional-dependencies]
