@@ -62,5 +62,9 @@ Authorized use of Microsoft trademarks or logos is subject to and must follow [M
 Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship.
 Any use of third-party trademarks or logos are subject to those third-party's policies.
 
+## Responsible AI Transparency Documentation
+The responsible AI transparency documentation can be found [here](MODEL_CARD.md).
+
+
 ## Researcher and Developers
 MatterSim is currently in active development. If you have any specific research interests related to this model or encounter any issues, please don't hesitate to reach out to us.
