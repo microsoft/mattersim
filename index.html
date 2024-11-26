@@ -136,8 +136,8 @@
       
     
     
-    <img src="_static/mattersim-with-name.png" class="logo__image only-light" alt="MatterSim 1.0.0 documentation - Home"/>
-    <img src="_static/mattersim-with-name.png" class="logo__image only-dark pst-js-only" alt="MatterSim 1.0.0 documentation - Home"/>
+    <img src="_static/mattersim.png" class="logo__image only-light" alt="MatterSim 1.0.0 documentation - Home"/>
+    <img src="_static/mattersim.png" class="logo__image only-dark pst-js-only" alt="MatterSim 1.0.0 documentation - Home"/>
   
   
 </a></div>
@@ -316,8 +316,8 @@
                 <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pre-trained-models">Pre-trained Models</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#faq">FAQ</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#bibliography">Bibliography</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#frequently-asked-questions">Frequently Asked Questions</a></li>
 </ul>
             </nav>
         </div>
@@ -346,11 +346,22 @@ released in appropriate time, so please stay tuned for updates.</p>
 <p>We currently offer two pre-trained versions of MatterSim with <strong>M3GNet</strong> architecture:</p>
 <ol class="arabic simple">
 <li><p><strong>mattersim-v1.0.0-1M</strong>: A mini version of the model that is faster to run.</p></li>
-<li><p><strong>mattersim-v1.0.0-5M</strong>: A larger version of the model that is more accurate.</p></li>
+<li><p><strong>mattersim-v1.0.0-5M</strong>: A medium version of the model that is more accurate.</p></li>
 </ol>
 <p>These models have been trained using the data generated through the workflows
 introduced in the <a class="reference external" href="https://arxiv.org/abs/2405.04967">MatterSim</a> manuscript, which provides an in-depth
 explanation of the methodologies underlying the MatterSim model.</p>
+</section>
+<section id="faq">
+<h2>FAQ<a class="headerlink" href="#faq" title="Link to this heading">#</a></h2>
+<p><strong>Q1</strong>: What is the difference between the mini and medium versions of MatterSim?</p>
+<blockquote>
+<div><p><strong>A</strong>: The mini version is a smaller model that is faster to run, while the medium version is more accurate.</p>
+</div></blockquote>
+<p><strong>Q2</strong>: Are you going to release the pre-trained models of MatterSim with transformer-based architectures?</p>
+<blockquote>
+<div><p><strong>A</strong>: The transformer-based MatterSim is still under development. Please contact us for more information.</p>
+</div></blockquote>
 </section>
 <section id="bibliography">
 <h2>Bibliography<a class="headerlink" href="#bibliography" title="Link to this heading">#</a></h2>
@@ -358,37 +369,21 @@ explanation of the methodologies underlying the MatterSim model.</p>
 <p class="admonition-title">Note</p>
 <p>If you use MatterSim in your research, please cite the following paper:</p>
 <div class="highlight-bibtex notranslate"><div class="highlight"><pre><span></span><span class="nc">@article</span><span class="p">{</span><span class="nl">yang2024mattersim</span><span class="p">,</span>
-<span class="w">   </span><span class="na">title</span><span class="p">=</span><span class="s">{MatterSim: A Deep Learning Atomistic Model Across Elements, Temperatures and Pressures}</span><span class="p">,</span>
-<span class="w">   </span><span class="na">author</span><span class="p">=</span><span class="s">{Han Yang and Chenxi Hu and Yichi Zhou and Xixian Liu and Yu Shi and Jielan Li and Guanzhi Li and Zekun Chen and Shuizhou Chen and Claudio Zeni and Matthew Horton and Robert Pinsler and Andrew Fowler and Daniel Zügner and Tian Xie and Jake Smith and Lixin Sun and Qian Wang and Lingyu Kong and Chang Liu and Hongxia Hao and Ziheng Lu}</span><span class="p">,</span>
-<span class="w">   </span><span class="na">year</span><span class="p">=</span><span class="s">{2024}</span><span class="p">,</span>
-<span class="w">   </span><span class="na">eprint</span><span class="p">=</span><span class="s">{2405.04967}</span><span class="p">,</span>
-<span class="w">   </span><span class="na">archivePrefix</span><span class="p">=</span><span class="s">{arXiv}</span><span class="p">,</span>
-<span class="w">   </span><span class="na">primaryClass</span><span class="p">=</span><span class="s">{cond-mat.mtrl-sci}</span><span class="p">,</span>
-<span class="w">   </span><span class="na">url</span><span class="p">=</span><span class="s">{https://arxiv.org/abs/2405.04967}</span><span class="p">,</span>
-<span class="w">   </span><span class="na">journal</span><span class="p">=</span><span class="s">{arXiv preprint arXiv:2405.04967</span>
-<span class="s">}</span>
+<span class="w">   </span><span class="na">title</span><span class="p">=</span><span class="s">{</span>
+<span class="s">      Mattersim: A deep learning atomistic model across elements,</span>
+<span class="s">      temperatures and pressures</span>
+<span class="s">   }</span><span class="p">,</span>
+<span class="w">   </span><span class="na">author</span><span class="p">=</span><span class="s">{</span>
+<span class="s">      Yang, Han and Hu, Chenxi and Zhou, Yichi and Liu, Xixian</span>
+<span class="s">      and Shi, Yu and Li, Jielan and Li, Guanzhi and Chen, Zekun</span>
+<span class="s">      and Chen, Shuizhou and Zeni, Claudio and others</span>
+<span class="s">   }</span><span class="p">,</span>
+<span class="w">   </span><span class="na">journal</span><span class="p">=</span><span class="s">{arXiv preprint arXiv:2405.04967}</span><span class="p">,</span>
+<span class="w">   </span><span class="na">year</span><span class="p">=</span><span class="s">{2024}</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 </div>
-</section>
-<section id="frequently-asked-questions">
-<h2>Frequently Asked Questions<a class="headerlink" href="#frequently-asked-questions" title="Link to this heading">#</a></h2>
-<p><strong>Q1</strong>: I have identified a system where MatterSim produces inaccurate or unexpected results. How can I report this?</p>
-<blockquote>
-<div><p><strong>A</strong>: We welcome and appreciate detailed bug reports to help improve MatterSim. Please raise an issue on our GitHub repository: <a class="github reference external" href="https://github.com/microsoft/mattersim/issues">microsoft/mattersim#issues</a>.</p>
-</div></blockquote>
-<p><strong>Q2</strong>: I have specific need for some features that are not currently supported by MatterSim. How can I request these features?</p>
-<blockquote>
-<div><p><strong>A</strong>: We are always looking to improve MatterSim and welcome feature requests. Please suggest a feature on our GitHub repository: <a class="github reference external" href="https://github.com/microsoft/mattersim/issues">microsoft/mattersim#issues</a>.</p>
-</div></blockquote>
-<p><strong>Q3</strong>: Do you have any plans to release more pre-trained models in the future?</p>
-<blockquote>
-<div><p><strong>A</strong>: Yes, we are actively working on developing more pre-trained models for MatterSim. Please stay tuned for updates.</p>
-</div></blockquote>
-<p><strong>Q4</strong>: How can I contribute to the development of MatterSim?</p>
-<blockquote>
-<div><p><strong>A</strong>: We warmly welcome contributions! Please help improve MatterSim by reporting bugs, suggesting features, or submitting pull requests to our GitHub repository: <a class="github reference external" href="https://github.com/microsoft/mattersim/pulls">microsoft/mattersim</a>.</p>
-</div></blockquote>
 <div class="toctree-wrapper compound">
 </div>
 </section>
@@ -433,8 +428,8 @@ explanation of the methodologies underlying the MatterSim model.</p>
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pre-trained-models">Pre-trained Models</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#faq">FAQ</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#bibliography">Bibliography</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#frequently-asked-questions">Frequently Asked Questions</a></li>
 </ul>
   </nav></div>
 
