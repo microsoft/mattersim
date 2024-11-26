@@ -62,6 +62,9 @@ We kindly request that users of MatterSim version 1.0.0 cite our preprint availa
 > [!IMPORTANT]
 > We *strongly suggest* that researchers and users explicitly state the specific version and checkpoint of MatterSim when conducting benchmarks or performance evaluations. This precise versioning is critical for reproducibility and accurate comparative analysis.
 
+## Limitations
+MatterSim is intended for atomistic simulations of bulk materials. Any attempt and interpretation beyond that should be avoided. For any appications related simulations of surfaces, interfaces, and systems with long-range interactions, the results are often qualitatively correct. For quantitative results, the model needs to be fine-tuned.
+
 ## Trademarks
 
 This project may contain trademarks or logos for projects, products, or services.
