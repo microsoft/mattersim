@@ -137,12 +137,16 @@ The checkpoints released in this repository are those trained on an internal imp
 ## Citation
 
 **BibTeX:**
-```bibtex
+```
 @article{yang2024mattersim,
-  title={Mattersim: A deep learning atomistic model across elements, temperatures and pressures},
-  author={Yang, Han and Hu, Chenxi and Zhou, Yichi and Liu, Xixian and Shi, Yu and Li, Jielan and Li, Guanzhi and Chen, Zekun and Chen, Shuizhou and Zeni, Claudio and others},
-  journal={arXiv preprint arXiv:2405.04967},
-  year={2024}
+      title={MatterSim: A Deep Learning Atomistic Model Across Elements, Temperatures and Pressures}, 
+      author={Han Yang and Chenxi Hu and Yichi Zhou and Xixian Liu and Yu Shi and Jielan Li and Guanzhi Li and Zekun Chen and Shuizhou Chen and Claudio Zeni and Matthew Horton and Robert Pinsler and Andrew Fowler and Daniel Zügner and Tian Xie and Jake Smith and Lixin Sun and Qian Wang and Lingyu Kong and Chang Liu and Hongxia Hao and Ziheng Lu},
+      year={2024},
+      eprint={2405.04967},
+      archivePrefix={arXiv},
+      primaryClass={cond-mat.mtrl-sci},
+      url={https://arxiv.org/abs/2405.04967},
+      journal={arXiv preprint arXiv:2405.04967}
 }
 ```
 
@@ -156,7 +160,7 @@ The checkpoints released in this repository are those trained on an internal imp
 
 ### Out-of-Scope Use
 
-The model only supports atomistic simulations of materials and molecules. Any attemp and interpretation beyond that should be avoided.
+The model only supports atomistic simulations of materials and molecules. Any attempt and interpretation beyond that should be avoided.
 The model does not support generation of new materials as it is designed for materials simulation and property prediction only.
 The model is intended for research and experimental purposes. Further testing/development are needed before considering its application in real-world scenarios.
 
