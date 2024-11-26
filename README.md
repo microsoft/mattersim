@@ -60,7 +60,7 @@ We kindly request that users of MatterSim version 1.0.0 cite our preprint availa
 ```
 
 > [!IMPORTANT]
-> **Important Note:** We *strongly suggest* that researchers and users explicitly state the specific version and checkpoint of MatterSim when conducting benchmarks or performance evaluations. This precise versioning is critical for reproducibility and accurate comparative analysis.
+> We *strongly suggest* that researchers and users explicitly state the specific version and checkpoint of MatterSim when conducting benchmarks or performance evaluations. This precise versioning is critical for reproducibility and accurate comparative analysis.
 
 ## Trademarks
 
