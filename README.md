@@ -60,10 +60,10 @@ We kindly request that users of MatterSim version 1.0.0 cite our preprint availa
 ```
 
 > [!IMPORTANT]
-> We *strongly suggest* that researchers and users explicitly state the specific version and checkpoint of MatterSim when conducting benchmarks or performance evaluations. This precise versioning is critical for reproducibility and accurate comparative analysis.
+> We kindly ask users to **explicitly** specify the exact model version and checkpoint (e.g., **MatterSim-v1.0.0-1M**) when reporting results in academic papers or technical reports, rather than referring to the model generically as **MatterSim**. Precise versioning is crucial for ensuring reproducibility. For instance, the statement "_This benchmark was conducted using MatterSim-v1.0.0-1M_" serves as a good example.
 
 ## Limitations
-MatterSim is intended for atomistic simulations of bulk materials. Any attempt and interpretation beyond that should be avoided. For any appications related simulations of surfaces, interfaces, and systems with long-range interactions, the results are often qualitatively correct. For quantitative results, the model needs to be fine-tuned.
+MatterSim is designed specifically for atomistic simulations of bulk materials. Applications or interpretations beyond this scope should be approached with caution. For instance, when using the model for simulations involving surfaces, interfaces, or properties influenced by long-range interactions, the results may be qualitatively accurate but are not suitable for quantitative analysis. In such cases, we recommend fine-tuning the model to better align with the specific application.
 
 ## Trademarks
 
