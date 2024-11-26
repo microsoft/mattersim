@@ -32,13 +32,16 @@ python setup.py build_ext --inplace
 ## Usage
 ### A minimal test
 ```python
+import torch
 from mattersim.forcefield.potential import Potential
 from mattersim.datasets.utils.build import build_dataloader
 
-potential = Potential.load(load_path="/path/to/checkpoint", device="cuda:0")
+device = "cuda" if torch.cuda.is_available() else "cpu"
+print(f"Running MatterSim on {device}")
+potential = Potential.load(load_path="pretrained_models/mattersim-v1.0.0-1M.pth", device=device)
 from ase.build import bulk
 si = bulk("Si", "diamond", a=5.43)
-dataloader = build_dataloader([si], only_inference=True, model_type=model_name)
+dataloader = build_dataloader([si], only_inference=True)
 predictions = potential.predict_properties(dataloader, include_forces=True, include_stresses=True)
 print(predictions)
 ```
