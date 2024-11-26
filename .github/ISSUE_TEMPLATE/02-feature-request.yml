@@ -1,0 +1,62 @@
+name: Feature Request
+description: Suggest a new feature or improvement for MatterSim
+title: "[Feat]: "
+labels: ["feature-request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We're excited to hear your feature ideas! Please provide detailed information.
+
+  - type: input
+    id: contact
+    attributes:
+      label: Contact Details
+      description: How can we reach you if we need more information?
+      placeholder: email@example.com
+    validations:
+      required: false
+
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: Feature Description
+      description: Provide a clear and detailed description of the proposed feature
+      placeholder: Describe the feature you'd like to see
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why would this feature be useful? What problem does it solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution
+      description: Describe how you envision this feature being implemented
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution Interest
+      description: Would you like to contribute to this feature?
+      options:
+        - label: I'm interested in potentially implementing this feature
+        - label: I can provide guidance, but cannot implement
+        - label: I'm just suggesting the feature for the community
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our Code of Conduct
+      options:
+        - label: I agree to follow the project's Code of Conduct
+          required: true
