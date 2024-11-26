@@ -1,0 +1,63 @@
+cff-version: 1.2.0
+message: "If you use this repository, please cite the following work."
+title: "MatterSim: A Deep Learning Atomistic Model Across Elements, Temperatures and Pressures"
+date-released: 2024-05
+repository-code: "https://github.com/microsoft/mattersim/"
+arxiv: "https://arxiv.org/abs/2405.04967"
+doi: "10.48550/arXiv.2405.04967"
+url: "https://microsoft.github.io/mattersim"
+type: software
+keywords:
+  - machine learning
+  - materials science
+  - machine learning force field
+  - computational materials science
+  - foundation models
+  - ai4science
+  - ai4materials
+version: 1.0.0 # replace with the version you use
+authors:
+  - family-names: "Yang"
+    given-names: "Han"
+  - family-names: "Hu"
+    given-names: "Chenxi"
+  - family-names: "Zhou"
+    given-names: "Yichi"
+  - family-names: "Liu"
+    given-names: "Xixian"
+  - family-names: "Shi"
+    given-names: "Yu"
+  - family-names: "Li"
+    given-names: "Jielan"
+  - family-names: "Li"
+    given-names: "Guanzhi"
+  - family-names: "Chen"
+    given-names: "Zekun"
+  - family-names: "Chen"
+    given-names: "Shuizhou"
+  - family-names: "Zeni"
+    given-names: "Claudio"
+  - family-names: "Horton"
+    given-names: "Matthew"
+  - family-names: "Pinsler"
+    given-names: "Robert"
+  - family-names: "Fowler"
+    given-names: "Andrew"
+  - family-names: "Zügner"
+    given-names: "Daniel"
+  - family-names: "Xie"
+    given-names: "Tian"
+  - family-names: "Smith"
+    given-names: "Jake"
+  - family-names: "Sun"
+    given-names: "Lixin"
+  - family-names: "Wang"
+    given-names: "Qian"
+  - family-names: "Kong"
+    given-names: "Lingyu"
+  - family-names: "Liu"
+    given-names: "Chang"
+  - family-names: "Hao"
+    given-names: "Hongxia"
+  - family-names: "Lu"
+    given-names: "Ziheng"
