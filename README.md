@@ -71,4 +71,4 @@ The responsible AI transparency documentation can be found [here](MODEL_CARD.md)
 
 
 ## Researcher and Developers
-MatterSim is currently in active development and we welcome community engagement. If you have any specific research interests related to this model, wants to contribute your idea, or encounter any issues, please don't hesitate to reach out to us.
+MatterSim is actively under development, and we welcome community engagement. If you have research interests related to this model, ideas you’d like to contribute, or issues to report, we encourage you to reach out to us.
