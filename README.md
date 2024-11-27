@@ -18,13 +18,13 @@ MatterSim is a deep learning atomistic model across elements, temperatures and p
 
 ## Installation
 ### Install from source code
-Requirements:
-- Python == 3.9
+> [!WARNING]
+> We strongly recommend that users install MatterSim using [mamba or micromamba](https://mamba.readthedocs.io/en/latest/index.html), because *conda* can be significantly slower when resolving the dependencies in environment.yaml.
 
 To install the package, run the following command under the root of the folder:
 ```bash
-conda env create -f environment.yaml
-conda activate mattersim
+mamba env create -f environment.yaml
+mamba activate mattersim
 pip install -e .
 python setup.py build_ext --inplace
 ```
