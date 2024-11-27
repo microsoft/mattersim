@@ -1,6 +1,6 @@
 <h1>
 <p align="center">
-    <img src="docs/_static/mattersim-banner.jpg" alt="MatterSim logo" width="600"/>
+    <img src="docs/_static/mattersim-banner.png" alt="MatterSim logo" width="600"/>
 </p>
 </h1>
 
