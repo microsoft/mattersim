@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mattersim"
-version = "1.0"
+version = "1.0.0"
 description = "MatterSim: A Deep Learning Atomistic Model Across Elements, Temperatures and Pressures."
 authors = [
     {name = "Han Yang", email = "hanyang@microsoft.com"},
