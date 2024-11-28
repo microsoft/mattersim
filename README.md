@@ -34,18 +34,19 @@ python setup.py build_ext --inplace
 ```python
 import torch
 from ase.build import bulk
-from mattersim.forcefield import Potential
-from mattersim.datasets.utils.build import build_dataloader
+from ase.units import GPa
+from mattersim.forcefield import MatterSimCalculator
 
 device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
 print(f"Running MatterSim on {device}")
 
-potential = Potential.load()
 si = bulk("Si", "diamond", a=5.43)
-dataloader = build_dataloader([si], only_inference=True)
-
-predictions = potential.predict_properties(dataloader, include_forces=True, include_stresses=True)
-print(predictions)
+si.calc = MatterSimCalculator()
+print(f"Energy (eV)                 = {si.get_potential_energy()}")
+print(f"Energy per atom (eV/atom)   = {si.get_potential_energy()/len(si)}")
+print(f"Forces of first atom (eV/A) = {si.get_forces()[0]}")
+print(f"Stress[0][0] (eV/A^3)       = {si.get_stress(voigt=False)[0][0]}")
+print(f"Stress[0][0] (GPa)          = {si.get_stress(voigt=False)[0][0] / GPa}")
 ```
 
 
