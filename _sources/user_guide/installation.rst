@@ -2,12 +2,25 @@
 Installation
 ============
 
+Install from PyPI
+-----------------
+
+To install the package, run the following command:
+
+.. code-block:: console
+
+    pip install mattersim
+
+In case you want to install the package with the latest version, you can run the following command:
+
+.. code-block:: console
+
+    pip install git+https://github.com/microsoft/mattersim.git
+
 Install from source code
 ------------------------
 
-Requirements:
 
-* Python == 3.9
 
 To install the package, run the following command under the root of the folder:
 
@@ -17,11 +30,7 @@ To install the package, run the following command under the root of the folder:
     conda activate mattersim
     pip install -e .
 
-Obtain the model checkpoints
+Model checkpoints
 ----------------------------
 
-You may obtain our model checkpoints from
-
-.. code-block:: console
-
-    # link to somewhere
+The currently available model checkpoints can be found in the `MatterSim GitHub repository <https://github.com/microsoft/mattersim/tree/main/src/mattersim/pretrained_models>`_.
