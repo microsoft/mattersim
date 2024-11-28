@@ -34,7 +34,7 @@ python setup.py build_ext --inplace
 ```python
 import torch
 from ase.build import bulk
-from mattersim.forcefield.potential import Potential
+from mattersim.forcefield import Potential
 from mattersim.datasets.utils.build import build_dataloader
 
 device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
