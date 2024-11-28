@@ -1023,6 +1023,7 @@ class MatterSimCalculator(Calculator):
         self.args_dict = args_dict
         self.device = device
 
+    @staticmethod
     def load(
         load_path: str = None,
         *,
