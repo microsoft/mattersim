@@ -1,24 +1,14 @@
 name: mattersim
 channels:
-  # - pyg
-  # - pytorch
   - conda-forge
-  # - nvidia
 dependencies:
   - python=3.9
-  # - pytorch-sparse
-  # - pytorch-scatter
-  # - pytorch==2.2.0
-  # - torchvision==0.17.0
-  # - torchaudio==2.2.0
-  # - pytorch-cuda=11.8
   - ca-certificates
   - openssl
   - numpy<2
   - phonopy==2.14.0
   - phono3py==2.3.0
   - cython>=0.29.32
-  # - loguru
   - setuptools>=45
   - wheel
   - pip:
