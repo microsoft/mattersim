@@ -25,9 +25,12 @@ dependencies = [
     "seekpath",
     "numpy<2",
     "pymatgen",
-    "torch_geometric==2.5.3",
+    "loguru",
     "torch==2.2.0",
+    "torchvision==0.17.0",
+    "torchaudio==2.2.0",
     "torch_runstats==0.2.0",
+    "torch_geometric==2.5.3",
     "torchmetrics>=0.10.0",
     "torch-ema==0.3",
     "opt_einsum_fx",
@@ -41,8 +44,11 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest",
+    "pytest-cov",
     "pytest-testmon",
-    "pre-commit"
+    "pre-commit",
+    "ipython",
+    "ipykernel"
 ]
 
 
