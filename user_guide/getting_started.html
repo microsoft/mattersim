@@ -313,8 +313,8 @@
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#a-minimal-example">A minimal example</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#interface-to-ase">Interface to ASE</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#a-minimal-example-using-ase-calculator">A minimal example using ASE calculator</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#batch-prediction-using-the-potential-class">Batch prediction using the <code class="docutils literal notranslate"><span class="pre">Potential</span></code> class</a></li>
 </ul>
             </nav>
         </div>
@@ -328,63 +328,71 @@
                   
   <section id="getting-started">
 <h1>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading">#</a></h1>
-<section id="a-minimal-example">
-<h2>A minimal example<a class="headerlink" href="#a-minimal-example" title="Link to this heading">#</a></h2>
-<p>The following example demonstrates how to load a pre-trained potential and make predictions for a single structure.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="kn">from</span> <span class="nn">ase.build</span> <span class="kn">import</span> <span class="n">bulk</span>
-<span class="linenos"> 2</span><span class="kn">from</span> <span class="nn">mattersim.forcefield.potential</span> <span class="kn">import</span> <span class="n">Potential</span>
-<span class="linenos"> 3</span><span class="kn">from</span> <span class="nn">mattersim.datasets.utils.build</span> <span class="kn">import</span> <span class="n">build_dataloader</span>
-<span class="linenos"> 4</span>
-<span class="linenos"> 5</span><span class="c1"># set up the structure</span>
-<span class="linenos"> 6</span><span class="n">si</span> <span class="o">=</span> <span class="n">bulk</span><span class="p">(</span><span class="s2">&quot;Si&quot;</span><span class="p">,</span> <span class="s2">&quot;diamond&quot;</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mf">5.43</span><span class="p">)</span>
-<span class="linenos"> 7</span>
-<span class="linenos"> 8</span><span class="c1"># load the model</span>
-<span class="linenos"> 9</span><span class="n">potential</span> <span class="o">=</span> <span class="n">Potential</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">load_path</span><span class="o">=</span><span class="s2">&quot;/path/to/checkpoint&quot;</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda:0&quot;</span><span class="p">)</span>
-<span class="linenos">10</span>
-<span class="linenos">11</span><span class="c1"># build the dataloader that is compatible with MatterSim</span>
-<span class="linenos">12</span><span class="n">dataloader</span> <span class="o">=</span> <span class="n">build_dataloader</span><span class="p">([</span><span class="n">si</span><span class="p">],</span> <span class="n">only_inference</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">model_type</span><span class="o">=</span><span class="n">model_name</span><span class="p">)</span>
-<span class="linenos">13</span>
-<span class="linenos">14</span><span class="c1"># make predictions</span>
-<span class="linenos">15</span><span class="n">predictions</span> <span class="o">=</span> <span class="n">potential</span><span class="o">.</span><span class="n">predict_properties</span><span class="p">(</span><span class="n">dataloader</span><span class="p">,</span> <span class="n">include_forces</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">include_stresses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="linenos">16</span>
-<span class="linenos">17</span><span class="c1"># print the predictions</span>
-<span class="linenos">18</span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total energy in eV: </span><span class="si">{</span><span class="n">predictions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="linenos">19</span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Forces in eV/Angstrom: </span><span class="si">{</span><span class="n">predictions</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="linenos">20</span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Stresses in GPa: </span><span class="si">{</span><span class="n">predictions</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-</section>
-<section id="interface-to-ase">
-<h2>Interface to ASE<a class="headerlink" href="#interface-to-ase" title="Link to this heading">#</a></h2>
-<p>MatterSim provides an interface to the Atomic Simulation Environment (ASE) to facilitate the use of MatterSim potentials in the popular ASE package.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="kn">from</span> <span class="nn">ase.build</span> <span class="kn">import</span> <span class="n">bulk</span>
-<span class="linenos"> 2</span><span class="kn">from</span> <span class="nn">ase.units</span> <span class="kn">import</span> <span class="n">GPa</span>
-<span class="linenos"> 3</span><span class="kn">from</span> <span class="nn">mattersim.forcefield.potential</span> <span class="kn">import</span> <span class="n">DeepCalculator</span>
-<span class="linenos"> 4</span>
-<span class="linenos"> 5</span><span class="c1"># same as before</span>
-<span class="linenos"> 6</span><span class="n">si</span> <span class="o">=</span> <span class="n">bulk</span><span class="p">(</span><span class="s2">&quot;Si&quot;</span><span class="p">,</span> <span class="s2">&quot;diamond&quot;</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mf">5.43</span><span class="p">)</span>
-<span class="linenos"> 7</span><span class="n">potential</span> <span class="o">=</span> <span class="n">Potential</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">load_path</span><span class="o">=</span><span class="s2">&quot;/path/to/checkpoint&quot;</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda:0&quot;</span><span class="p">)</span>
+<section id="a-minimal-example-using-ase-calculator">
+<h2>A minimal example using ASE calculator<a class="headerlink" href="#a-minimal-example-using-ase-calculator" title="Link to this heading">#</a></h2>
+<p>MatterSim provides an interface to the Atomic Simulation Environment (ASE) to
+facilitate the use of MatterSim potentials in the popular ASE package.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="kn">import</span> <span class="nn">torch</span>
+<span class="linenos"> 2</span><span class="kn">from</span> <span class="nn">ase.build</span> <span class="kn">import</span> <span class="n">bulk</span>
+<span class="linenos"> 3</span><span class="kn">from</span> <span class="nn">ase.units</span> <span class="kn">import</span> <span class="n">GPa</span>
+<span class="linenos"> 4</span><span class="kn">from</span> <span class="nn">mattersim.forcefield</span> <span class="kn">import</span> <span class="n">MatterSimCalculator</span>
+<span class="linenos"> 5</span>
+<span class="linenos"> 6</span><span class="n">device</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span>
+<span class="linenos"> 7</span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Running MatterSim on </span><span class="si">{</span><span class="n">device</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <span class="linenos"> 8</span>
-<span class="linenos"> 9</span><span class="c1"># set up the calculator</span>
-<span class="linenos">10</span><span class="n">calculator</span> <span class="o">=</span> <span class="n">DeepCalculator</span><span class="p">(</span>
-<span class="linenos">11</span>    <span class="n">potential</span><span class="o">=</span><span class="n">potential</span><span class="p">,</span>
-<span class="linenos">12</span>    <span class="c1"># important! convert GPa to eV/Angstrom^3</span>
-<span class="linenos">13</span>    <span class="n">stress_weight</span><span class="o">=</span><span class="n">GPa</span><span class="p">,</span>
-<span class="linenos">14</span><span class="p">)</span>
-<span class="linenos">15</span>
-<span class="linenos">16</span><span class="n">si</span><span class="o">.</span><span class="n">calc</span> <span class="o">=</span> <span class="n">calculator</span>
-<span class="linenos">17</span><span class="c1"># or</span>
-<span class="linenos">18</span><span class="n">si</span><span class="o">.</span><span class="n">set_calculator</span><span class="p">(</span><span class="n">calculator</span><span class="p">)</span>
-<span class="linenos">19</span>
-<span class="linenos">20</span><span class="nb">print</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">())</span>
-<span class="linenos">21</span><span class="nb">print</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">get_forces</span><span class="p">())</span>
-<span class="linenos">22</span><span class="nb">print</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">get_stress</span><span class="p">(</span><span class="n">voigt</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+<span class="linenos"> 9</span><span class="n">si</span> <span class="o">=</span> <span class="n">bulk</span><span class="p">(</span><span class="s2">&quot;Si&quot;</span><span class="p">,</span> <span class="s2">&quot;diamond&quot;</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mf">5.43</span><span class="p">)</span>
+<span class="linenos">10</span><span class="n">si</span><span class="o">.</span><span class="n">calc</span> <span class="o">=</span> <span class="n">MatterSimCalculator</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+<span class="linenos">11</span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Energy (eV)                 = </span><span class="si">{</span><span class="n">si</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos">12</span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Energy per atom (eV/atom)   = </span><span class="si">{</span><span class="n">si</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">si</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos">13</span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Forces of first atom (eV/A) = </span><span class="si">{</span><span class="n">si</span><span class="o">.</span><span class="n">get_forces</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos">14</span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Stress[0][0] (eV/A^3)       = </span><span class="si">{</span><span class="n">si</span><span class="o">.</span><span class="n">get_stress</span><span class="p">(</span><span class="n">voigt</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos">15</span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Stress[0][0] (GPa)          = </span><span class="si">{</span><span class="n">si</span><span class="o">.</span><span class="n">get_stress</span><span class="p">(</span><span class="n">voigt</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">GPa</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>In the example above, the <cite>DeepCalculator</cite> class implements the ASE calculator interface. The <strong>stress_weight</strong> parameter is used to convert the stress tensor from GPa to <span class="math notranslate nohighlight">\(\mathrm{eV}\cdot\mathrm{\mathring{A}}^{-3}\)</span>.</p>
+<p>In the example above, the <code class="docutils literal notranslate"><span class="pre">MatterSimCalculator</span></code> class implements the ASE calculator interface.
+However, with <code class="docutils literal notranslate"><span class="pre">MatterSimCalculator</span></code>, one can only predict the properties of a single structure at a time,
+which is not efficient for large-scale calculations to effectively utilize the GPU.
+Thus, we also provide a more efficient way to predict the properties of multiple structures using the <code class="docutils literal notranslate"><span class="pre">Potential</span></code> class.</p>
+</section>
+<section id="batch-prediction-using-the-potential-class">
+<h2>Batch prediction using the <code class="docutils literal notranslate"><span class="pre">Potential</span></code> class<a class="headerlink" href="#batch-prediction-using-the-potential-class" title="Link to this heading">#</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">Potential</span></code> class provides a more efficient way to predict the properties of
+multiple structures using the <code class="docutils literal notranslate"><span class="pre">predict_properties</span></code> method.
+In the following example, we demonstrate how to predict the properties of
+a list of structures using the <code class="docutils literal notranslate"><span class="pre">Potential</span></code> class.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="linenos"> 2</span><span class="kn">from</span> <span class="nn">ase.build</span> <span class="kn">import</span> <span class="n">bulk</span>
+<span class="linenos"> 3</span><span class="kn">from</span> <span class="nn">ase.units</span> <span class="kn">import</span> <span class="n">GPa</span>
+<span class="linenos"> 4</span><span class="kn">from</span> <span class="nn">mattersim.forcefield.potential</span> <span class="kn">import</span> <span class="n">Potential</span>
+<span class="linenos"> 5</span><span class="kn">from</span> <span class="nn">mattersim.datasets.utils.build</span> <span class="kn">import</span> <span class="n">build_dataloader</span>
+<span class="linenos"> 6</span>
+<span class="linenos"> 7</span><span class="c1"># set up the structure</span>
+<span class="linenos"> 8</span><span class="n">si</span> <span class="o">=</span> <span class="n">bulk</span><span class="p">(</span><span class="s2">&quot;Si&quot;</span><span class="p">,</span> <span class="s2">&quot;diamond&quot;</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mf">5.43</span><span class="p">)</span>
+<span class="linenos"> 9</span>
+<span class="linenos">10</span><span class="c1"># replicate the structures to form a list</span>
+<span class="linenos">11</span><span class="n">structures</span> <span class="o">=</span> <span class="p">[</span><span class="n">si</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10</span>
+<span class="linenos">12</span>
+<span class="linenos">13</span><span class="c1"># load the model</span>
+<span class="linenos">14</span><span class="n">potential</span> <span class="o">=</span> <span class="n">Potential</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">load_path</span><span class="o">=</span><span class="s2">&quot;/path/to/checkpoint&quot;</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda:0&quot;</span><span class="p">)</span>
+<span class="linenos">15</span>
+<span class="linenos">16</span><span class="c1"># build the dataloader that is compatible with MatterSim</span>
+<span class="linenos">17</span><span class="n">dataloader</span> <span class="o">=</span> <span class="n">build_dataloader</span><span class="p">(</span><span class="n">structures</span><span class="p">,</span> <span class="n">only_inference</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="linenos">18</span>
+<span class="linenos">19</span><span class="c1"># make predictions</span>
+<span class="linenos">20</span><span class="n">predictions</span> <span class="o">=</span> <span class="n">potential</span><span class="o">.</span><span class="n">predict_properties</span><span class="p">(</span><span class="n">dataloader</span><span class="p">,</span> <span class="n">include_forces</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">include_stresses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="linenos">21</span>
+<span class="linenos">22</span><span class="c1"># print the predictions</span>
+<span class="linenos">23</span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total energy in eV: </span><span class="si">{</span><span class="n">predictions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos">24</span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Forces in eV/Angstrom: </span><span class="si">{</span><span class="n">predictions</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos">25</span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Stresses in GPa: </span><span class="si">{</span><span class="n">predictions</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos">26</span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Stresses in eV/A^3: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">predictions</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span><span class="o">*</span><span class="n">GPa</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>By default, the ASE package assumes <span class="math notranslate nohighlight">\(\mathrm{eV}\cdot\mathrm{\mathring{A}}^{-3}\)</span> for the stress tensor. However, MatterSim uses GPa for the stress tensor. Therefore, the <strong>stress_weight</strong> parameter is necessary to convert the stress tensor from GPa to <span class="math notranslate nohighlight">\(\mathrm{eV}\cdot\mathrm{\mathring{A}}^{-3}\)</span>.</p>
+<p>By default, MatterSim <code class="docutils literal notranslate"><span class="pre">potential.predict_properties</span></code> predicts stress tensors in GPa.
+To convert the stress tensor to <span class="math notranslate nohighlight">\(\mathrm{eV}\cdot\mathrm{\mathring{A}}^{-3}\)</span>,
+multiply the stress tensor by the conversion factor <code class="docutils literal notranslate"><span class="pre">GPa</span></code>.</p>
 </div>
 </section>
 </section>
@@ -435,8 +443,8 @@
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#a-minimal-example">A minimal example</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#interface-to-ase">Interface to ASE</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#a-minimal-example-using-ase-calculator">A minimal example using ASE calculator</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#batch-prediction-using-the-potential-class">Batch prediction using the <code class="docutils literal notranslate"><span class="pre">Potential</span></code> class</a></li>
 </ul>
   </nav></div>
 

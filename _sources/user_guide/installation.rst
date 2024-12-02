@@ -29,6 +29,19 @@ To install the package, run the following command under the root of the folder:
     conda env create -f environment.yaml
     conda activate mattersim
     pip install -e .
+    python setup.py build_ext --inplace
+
+
+Please note that the installation process may take a while due to the installation of the dependencies.
+For faster installation, we recommend the users to install with [mamba or micromamba](https://mamba.readthedocs.io/en/latest/index.html),
+and the [uv](https://docs.astral.sh/uv/) package manager.
+
+.. code-block:: console
+
+    mamba env create -f environment.yaml
+    mamba activate mattersim
+    uv pip install -e .
+    python setup.py build_ext --inplace
 
 Model checkpoints
 ----------------------------
