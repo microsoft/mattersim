@@ -1,0 +1,2 @@
+include src/mattersim/pretrained_models/*.pth
+include src/mattersim/datasets/utils/*.pyx
