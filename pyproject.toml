@@ -52,6 +52,17 @@ dev = [
     "ipykernel"
 ]
 
+docs = [
+    "sphinx",
+    "sphinx-autodoc-typehints",
+    "sphinx_book_theme",
+    "sphinx-copybutton",
+    "recommonmark",
+    "nbsphinx",
+    "nbconvert",
+]
+
+
 
 [project.urls]
 "Homepage" = "https://github.com/microsoft/mattersim"
