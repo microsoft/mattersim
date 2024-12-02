@@ -59,7 +59,7 @@ To install the package, run the following command under the root of the folder:
 ```bash
 mamba env create -f environment.yaml
 mamba activate mattersim
-pip install -e .
+uv pip install -e .
 python setup.py build_ext --inplace
 ```
 
