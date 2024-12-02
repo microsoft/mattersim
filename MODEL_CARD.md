@@ -36,7 +36,7 @@ Please refer to the [MatterSim](https://arxiv.org/abs/2405.04967) manuscript for
 ### Available Models
 
 |                    | mattersim-v1.0.0-1M   | mattersim-v1.0.0-5M     |
-| ------------------ | --------------------- | ----------------------- | 
+| ------------------ | --------------------- | ----------------------- |
 | Training Data Size | 3M                    | 6M                      |
 | Model Parameters   | 880K                  | 4.5M                    |
 
@@ -47,7 +47,7 @@ The MatterSim model is intended for property predictions of materials.
 
 ### Direct Use
 
-The model is used for materials simulation and property prediciton tasks. An interface to atomic simulation environment is provided. Examples of direct usages include but not limited to 
+The model is used for materials simulation and property prediciton tasks. An interface to atomic simulation environment is provided. Examples of direct usages include but not limited to
 
 - Direct prediction of energy, forces and stress of a given materials
 - Phonon prediction using finite difference
@@ -102,7 +102,7 @@ where $N$ is the number of structures in the same dataset, $N_{at}^{(i)}$ is the
 
 ### Results
 
-| Dataset              | Dataset Size | MAE               | mattersim-mini-v1.0.0 | mattersim-medium-v1.0.0 |
+| Dataset              | Dataset Size | MAE               | mattersim-v1.0.0-1M | mattersim-v1.0.0-5M |
 | -------------------- | ------------ | ----------------- | ------------ | ------------ |
 | MPtrj-random-1k      | 1000         | Energy [eV/atom]  | 0.030        | 0.024        |
 |                      |              | Forces [eV/$\AA$] | 0.149        | 0.109        |
@@ -139,7 +139,7 @@ The checkpoints released in this repository are those trained on an internal imp
 **BibTeX:**
 ```
 @article{yang2024mattersim,
-      title={MatterSim: A Deep Learning Atomistic Model Across Elements, Temperatures and Pressures}, 
+      title={MatterSim: A Deep Learning Atomistic Model Across Elements, Temperatures and Pressures},
       author={Han Yang and Chenxi Hu and Yichi Zhou and Xixian Liu and Yu Shi and Jielan Li and Guanzhi Li and Zekun Chen and Shuizhou Chen and Claudio Zeni and Matthew Horton and Robert Pinsler and Andrew Fowler and Daniel Zügner and Tian Xie and Jake Smith and Lixin Sun and Qian Wang and Lingyu Kong and Chang Liu and Hongxia Hao and Ziheng Lu},
       year={2024},
       eprint={2405.04967},
@@ -166,7 +166,7 @@ The model is intended for research and experimental purposes. Further testing/de
 
 ## Bias, Risks, and Limitations
 
-The current model has relatively low accuracy for organic polymeric systems. 
+The current model has relatively low accuracy for organic polymeric systems.
 Accuracy is inferior to the best (more computationally expensive) methods available.
 The model is trained on a specific variant of Density Functional Theory (PBE) that has known limitations across chemical space which will affect accuracy of prediction, such as the ability to simulate highly-correlated systems. (The model can be fine-tuned with higher accuracy data.)
 The model does not support all capabilities of some of the latest models such as predicting Born effective charges or simulating a material in an applied electric field.
