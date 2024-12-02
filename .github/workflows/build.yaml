@@ -28,11 +28,15 @@ jobs:
 
     - name: Install dependencies
       run: |
-        micromamba run -n mattersim pip install -e .
+        micromamba run -n mattersim uv pip install -e .
 
     - name: Install test dependencies
       run: |
-        micromamba run -n mattersim pip install -e ".[dev]"
+        micromamba run -n mattersim uv pip install -e ".[dev]"
+
+    - name: Build extension
+      run: |
+        micromamba run -n mattersim python setup.py build_ext --inplace
 
     - name: Run tests
       run: |
