@@ -33,7 +33,7 @@ This README provides a quick start guide. For more comprehensive information, pl
 > ```
 >
 
-To install MatterSim, run the following command:
+To install MatterSim, use the following command. Please note that downloading the dependencies may take some time:
 ```bash
 pip install mattersim
 ```
