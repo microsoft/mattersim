@@ -86,6 +86,13 @@ print(f"Stress[0][0] (eV/A^3)       = {si.get_stress(voigt=False)[0][0]}")
 print(f"Stress[0][0] (GPa)          = {si.get_stress(voigt=False)[0][0] / GPa}")
 ```
 
+In this release, we provide two checkpoints: `MatterSim-v1.0.0-1M.pth` and `MatterSim-v1.0.0-5M.pth`. By default, the `1M` version is loaded.
+To switch to the `5M` version, manually set the `load_path` of `MatterSimCalculator` as shown below:
+
+```python
+MatterSimCalculator(load_path="MatterSim-v1.0.0-5M.pth", device=device)
+```
+
 
 ## Reference
 We kindly request that users of MatterSim version 1.0.0 cite our preprint available on arXiv:
