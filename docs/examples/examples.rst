@@ -6,4 +6,4 @@ Examples
    :numbered:
 
    relax_example
-   phonon_example.ipynb
+   phonon_example
