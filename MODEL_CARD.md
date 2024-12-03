@@ -94,7 +94,7 @@ We evaluate the performance by computing the mean absolute errors (MAEs) of ener
 <p align="center">
       <img src="https://latex.codecogs.com/svg.latex?\mathrm{MAE}_S=\frac{1}{N}\sum_i^{N}||S_{i}-\tilde{S}_{i}||_2," alt="MAE_S equation">
 </p>
-where <img src="https://latex.codecogs.com/svg.image?\inline&space;&space;N"> is the number of structures in the same dataset, <img src="https://latex.codecogs.com/svg.latex?N_{at}^{(i)}" alt="N_{at}^{(i)}"> is the number of atoms in the <img src="https://latex.codecogs.com/svg.latex?i" alt="i">-th structure and <img src="https://latex.codecogs.com/svg.latex?\tilde{E}" alt="\tilde{E}">, <img src="https://latex.codecogs.com/svg.latex?\tilde{F}" alt="\tilde{F}"> and <img src="https://latex.codecogs.com/svg.latex?\tilde{S}" alt="\tilde{S}"> represent ground-truth energy, forces and stress, respectively.
+where N is the number of structures in the same dataset, N_{at}^{(i)} is the number of atoms in the i-th structure and E, F and S represent ground-truth energy, forces and stress, respectively.
 
 
 ### Results
