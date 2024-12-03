@@ -17,9 +17,11 @@
 MatterSim is a deep learning atomistic model across elements, temperatures and pressures.
 
 ## Documentation
+
 This README provides a quick start guide. For more comprehensive information, please refer to the [MatterSim documentation](https://microsoft.github.io/mattersim/).
 
 ## Installation
+
 ### Prerequisite
 * Python==3.9
 
@@ -70,6 +72,7 @@ python setup.py build_ext --inplace
 ```
 
 ## Usage
+
 ### A minimal test
 ```python
 import torch
@@ -98,6 +101,7 @@ MatterSimCalculator(load_path="MatterSim-v1.0.0-5M.pth", device=device)
 
 
 ## Reference
+
 We kindly request that users of MatterSim version 1.0.0 cite our preprint available on arXiv:
 ```
 @article{yang2024mattersim,
@@ -116,6 +120,7 @@ We kindly request that users of MatterSim version 1.0.0 cite our preprint availa
 > We kindly ask users to **explicitly** specify the exact model version and checkpoint (e.g., **MatterSim-v1.0.0-1M**) when reporting results in academic papers or technical reports, rather than referring to the model generically as **MatterSim**. Precise versioning is crucial for ensuring reproducibility. For instance, the statement "_This study was conducted using MatterSim-v1.0.0-1M_" serves as a good example.
 
 ## Limitations
+
 **MatterSim-v1** is designed specifically for atomistic simulations of bulk materials. Applications or interpretations beyond this scope should be approached with caution. For instance, when using the model for simulations involving surfaces, interfaces, or properties influenced by long-range interactions, the results may be qualitatively accurate but are not suitable for quantitative analysis. In such cases, we recommend fine-tuning the model to better align with the specific application.
 
 ## Trademarks
@@ -126,6 +131,7 @@ Use of Microsoft trademarks or logos in modified versions of this project must n
 Any use of third-party trademarks or logos are subject to those third-party's policies.
 
 ## Responsible AI Transparency Documentation
+
 The responsible AI transparency documentation can be found [here](MODEL_CARD.md).
 
 
