@@ -42,6 +42,7 @@ jobs:
         make html
 
     - name: Deploy to GitHub Pages
+      if: github.event_name == 'push' && github.repository == 'microsoft/mattersim' && ( startsWith( github.ref, 'refs/tags/' ) || github.ref == 'refs/heads/main' )
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
