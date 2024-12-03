@@ -85,19 +85,16 @@ print(f"Stress: {atoms.get_stress(voigt=False)} eV/A^3, or {atoms.get_stress(voi
 #### Metrics
 
 We evaluate the performance by computing the mean absolute errors (MAEs) of energy (E), forces (F) and stress (S) of each structures within the same dataset. The MAEs are defined as follows,
-
-$$
-\mathrm{MAE}_E = \frac{1}{N}\sum_{i}^N \frac{1}{N_{at}^{(i)}}|E_i-\tilde{E}_i|,
-$$
-
-$$
-\mathrm{MAE}_F = \frac{1}{N}\sum_i^N \frac{1}{N_{at}^{(i)}} \sum_{j}^{N^{(i)}_{at}} ||F_{ij}-\tilde{F}_{ij}||_2,
-$$
-and
-$$
-\mathrm{MAE}_S = \frac{1}{N}\sum_i^{N}  ||S_{i}-\tilde{S}_{i}||_2,
-$$
-where $N$ is the number of structures in the same dataset, $N_{at}^{(i)}$ is the number of atoms in the $i$-th structure and $\tilde{E}$, $\tilde{F}$ and $\tilde{S}$ represent ground-truth energy, forces and stress, respectively.
+<p align="center">
+      <img src="https://latex.codecogs.com/svg.latex?\mathrm{MAE}_E=\frac{1}{N}\sum_{i}^N\frac{1}{N_{at}^{(i)}}|E_i-\tilde{E}_i|" alt="MAE_E equation">
+</p>
+<p align="center">
+      <img src="https://latex.codecogs.com/svg.latex?\mathrm{MAE}_F=\frac{1}{N}\sum_i^N\frac{1}{N_{at}^{(i)}}\sum_{j}^{N^{(i)}_{at}}||F_{ij}-\tilde{F}_{ij}||_2," alt="MAE_F equation">
+</p>
+<p align="center">
+      <img src="https://latex.codecogs.com/svg.latex?\mathrm{MAE}_S=\frac{1}{N}\sum_i^{N}||S_{i}-\tilde{S}_{i}||_2," alt="MAE_S equation">
+</p>
+where <img src="https://latex.codecogs.com/svg.latex?N" alt="N"> is the number of structures in the same dataset, <img src="https://latex.codecogs.com/svg.latex?N_{at}^{(i)}" alt="N_{at}^{(i)}"> is the number of atoms in the <img src="https://latex.codecogs.com/svg.latex?i" alt="i">-th structure and <img src="https://latex.codecogs.com/svg.latex?\tilde{E}" alt="\tilde{E}">, <img src="https://latex.codecogs.com/svg.latex?\tilde{F}" alt="\tilde{F}"> and <img src="https://latex.codecogs.com/svg.latex?\tilde{S}" alt="\tilde{S}"> represent ground-truth energy, forces and stress, respectively.
 
 
 ### Results
@@ -105,24 +102,23 @@ where $N$ is the number of structures in the same dataset, $N_{at}^{(i)}$ is the
 | Dataset              | Dataset Size | MAE               | mattersim-v1.0.0-1M | mattersim-v1.0.0-5M |
 | -------------------- | ------------ | ----------------- | ------------ | ------------ |
 | MPtrj-random-1k      | 1000         | Energy [eV/atom]  | 0.030        | 0.024        |
-|                      |              | Forces [eV/$\AA$] | 0.149        | 0.109        |
+|                      |              | Forces [eV/<img src="https://latex.codecogs.com/svg.latex?\AA" alt="\AA">] | 0.149        | 0.109        |
 |                      |              | Stress [GPa]      | 0.241        | 0.186        |
 | MPtrj-high-stress-1k | 1000         | Energy [eV/atom]  | 0.110        | 0.108        |
-|                      |              | Forces [eV/$\AA$] | 0.417        | 0.361        |
+|                      |              | Forces [eV/<img src="https://latex.codecogs.com/svg.latex?\AA" alt="\AA">] | 0.417        | 0.361        |
 |                      |              | Stress [GPa]      | 6.230        | 6.003        |
 | Alexandria-1k        | 1000         | Energy [eV/atom]  | 0.058        | 0.016        |
-|                      |              | Forces [eV/$\AA$] | 0.086        | 0.042        |
+|                      |              | Forces [eV/<img src="https://latex.codecogs.com/svg.latex?\AA" alt="\AA">] | 0.086        | 0.042        |
 |                      |              | Stress [GPa]      | 0.761        | 0.205        |
 | MPF-Alkali-TP        | 460          | Energy [eV/atom]  | 0.024        | 0.021        |
-|                      |              | Forces [eV/$\AA$] | 0.331        | 0.293        |
+|                      |              | Forces [eV/<img src="https://latex.codecogs.com/svg.latex?\AA" alt="\AA">] | 0.331        | 0.293        |
 |                      |              | Stress [GPa]      | 0.845        | 0.714        |
 | MPF-TP               | 1069         | Energy [eV/atom]  | 0.029        | 0.026        |
-|                      |              | Forces [eV/$\AA$] | 0.418        | 0.364        |
+|                      |              | Forces [eV/<img src="https://latex.codecogs.com/svg.latex?\AA" alt="\AA">] | 0.418        | 0.364        |
 |                      |              | Stress [GPa]      | 1.159        | 1.144        |
 | Random-TP            | 693          | Energy [eV/atom]  | 0.208        | 0.199        |
-|                      |              | Forces [eV/$\AA$] | 0.933        | 0.824        |
+|                      |              | Forces [eV/<img src="https://latex.codecogs.com/svg.latex?\AA" alt="\AA">] | 0.933        | 0.824        |
 |                      |              | Stress [GPa]      | 2.065        | 1.999        |
-
 
 ## Technical Specifications [optional]
 
