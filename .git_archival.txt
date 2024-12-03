@@ -1,0 +1,3 @@
+node: $Format:%H$
+node-date: $Format:%cI$
+dscribe-name: $Format:%(describe:tags=true,match=*[0-9]*)$e
