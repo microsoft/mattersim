@@ -1102,6 +1102,7 @@ class MatterSimCalculator(Calculator):
     def __init__(
         self,
         potential: Potential = None,
+        load_path: str = "mattersim-v1.0.0-1m.pth",
         args_dict: dict = {},
         compute_stress: bool = True,
         stress_weight: float = GPa,
@@ -1117,26 +1118,23 @@ class MatterSimCalculator(Calculator):
         """
         super().__init__(**kwargs)
         if potential is None:
-            self.potential = Potential.load(device=device)
+            self.potential = Potential.load(device=device, load_path=load_path)
         else:
+            logger.info("Using the provided potential")
             self.potential = potential
         self.compute_stress = compute_stress
         self.stress_weight = stress_weight
         self.args_dict = args_dict
         self.device = device
 
-    @staticmethod
     def load(
+        self,
         load_path: str = None,
         *,
         model_name: str = "m3gnet",
         device: str = "cuda" if torch.cuda.is_available() else "cpu",
         args: Dict = None,
         load_training_state: bool = True,
-        args_dict: dict = {},
-        compute_stress: bool = True,
-        stress_weight: float = GPa,
-        **kwargs,
     ):
         potential = Potential.load(
             load_path=load_path,
@@ -1145,14 +1143,7 @@ class MatterSimCalculator(Calculator):
             args=args,
             load_training_state=load_training_state,
         )
-        return MatterSimCalculator(
-            potential=potential,
-            args_dict=args_dict,
-            compute_stress=compute_stress,
-            stress_weight=stress_weight,
-            device=device,
-            **kwargs,
-        )
+        self.potential = potential
 
     def calculate(
         self,
