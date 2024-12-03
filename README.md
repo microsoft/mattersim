@@ -17,7 +17,7 @@
 MatterSim is a deep learning atomistic model across elements, temperatures and pressures.
 
 ## Documentation
-This README provides a quick start guide. For more comprehensive information, please refer to the [MatterSim documentation](https://microsoft.github.io/mattersim).
+This README provides a quick start guide. For more comprehensive information, please refer to the [MatterSim documentation](https://microsoft.github.io/mattersim/).
 
 ## Installation
 ### Install from PyPI
