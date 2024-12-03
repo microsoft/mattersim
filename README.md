@@ -20,6 +20,9 @@ MatterSim is a deep learning atomistic model across elements, temperatures and p
 This README provides a quick start guide. For more comprehensive information, please refer to the [MatterSim documentation](https://microsoft.github.io/mattersim/).
 
 ## Installation
+### Prerequisite
+* Python==3.9
+
 ### Install from PyPI
 > [!TIP]
 > While not mandatory, we recommend creating a clean conda environment before installing MatterSim to avoid potential package conflicts. You can create and activate a conda environment with the following commands:
