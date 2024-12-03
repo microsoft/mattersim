@@ -33,8 +33,9 @@ To install the package, run the following command under the root of the folder:
 
 
 Please note that the installation process may take a while due to the installation of the dependencies.
-For faster installation, we recommend the users to install with [mamba or micromamba](https://mamba.readthedocs.io/en/latest/index.html),
-and the [uv](https://docs.astral.sh/uv/) package manager.
+For faster installation, we recommend the users to install with
+`mamba or micromamba <https://mamba.readthedocs.io/en/latest/index.html>`_,
+and the `uv <https://docs.astral.sh/uv/>`_ package manager.
 
 .. code-block:: console
 

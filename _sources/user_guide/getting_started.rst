@@ -43,6 +43,7 @@ a list of structures using the ``Potential`` class.
 .. code-block:: python
     :linenos:
 
+    import torch
     import numpy as np
     from ase.build import bulk
     from ase.units import GPa
@@ -56,7 +57,9 @@ a list of structures using the ``Potential`` class.
     structures = [si] * 10
 
     # load the model
-    potential = Potential.load(load_path="/path/to/checkpoint", device="cuda:0")
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"Running MatterSim on {device}")
+    potential = Potential.load(device=device)
 
     # build the dataloader that is compatible with MatterSim
     dataloader = build_dataloader(structures, only_inference=True)
