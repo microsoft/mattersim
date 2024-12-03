@@ -330,38 +330,38 @@
 <p>This is a simple example of how to perform a structure optimization using the MatterSim.</p>
 <section id="import-the-necessary-modules">
 <h2><span class="section-number">1.1. </span>Import the necessary modules<a class="headerlink" href="#import-the-necessary-modules" title="Link to this heading">#</a></h2>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">ase.build</span> <span class="kn">import</span> <span class="n">bulk</span>
-<span class="kn">from</span> <span class="nn">ase.units</span> <span class="kn">import</span> <span class="n">GPa</span>
-<span class="kn">from</span> <span class="nn">mattersim.forcefield.potential</span> <span class="kn">import</span> <span class="n">MatterSimCalculator</span>
-<span class="kn">from</span> <span class="nn">mattersim.applications.relax</span> <span class="kn">import</span> <span class="n">Relaxer</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="linenos">2</span><span class="kn">from</span> <span class="nn">ase.build</span> <span class="kn">import</span> <span class="n">bulk</span>
+<span class="linenos">3</span><span class="kn">from</span> <span class="nn">ase.units</span> <span class="kn">import</span> <span class="n">GPa</span>
+<span class="linenos">4</span><span class="kn">from</span> <span class="nn">mattersim.forcefield.potential</span> <span class="kn">import</span> <span class="n">MatterSimCalculator</span>
+<span class="linenos">5</span><span class="kn">from</span> <span class="nn">mattersim.applications.relax</span> <span class="kn">import</span> <span class="n">Relaxer</span>
 </pre></div>
 </div>
 </section>
 <section id="set-up-the-structure-to-relax">
 <h2><span class="section-number">1.2. </span>Set up the structure to relax<a class="headerlink" href="#set-up-the-structure-to-relax" title="Link to this heading">#</a></h2>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># initialize the structure of silicon</span>
-<span class="n">si</span> <span class="o">=</span> <span class="n">bulk</span><span class="p">(</span><span class="s2">&quot;Si&quot;</span><span class="p">,</span> <span class="s2">&quot;diamond&quot;</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mf">5.43</span><span class="p">)</span>
-
-<span class="c1"># perturb the structure</span>
-<span class="n">si</span><span class="o">.</span><span class="n">positions</span> <span class="o">+=</span> <span class="mf">0.1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">si</span><span class="p">),</span> <span class="mi">3</span><span class="p">)</span>
-
-<span class="c1"># attach the calculator to the atoms object</span>
-<span class="n">si</span><span class="o">.</span><span class="n">calc</span> <span class="o">=</span> <span class="n">MatterSimCalculator</span><span class="p">()</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="c1"># initialize the structure of silicon</span>
+<span class="linenos">2</span><span class="n">si</span> <span class="o">=</span> <span class="n">bulk</span><span class="p">(</span><span class="s2">&quot;Si&quot;</span><span class="p">,</span> <span class="s2">&quot;diamond&quot;</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mf">5.43</span><span class="p">)</span>
+<span class="linenos">3</span>
+<span class="linenos">4</span><span class="c1"># perturb the structure</span>
+<span class="linenos">5</span><span class="n">si</span><span class="o">.</span><span class="n">positions</span> <span class="o">+=</span> <span class="mf">0.1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">si</span><span class="p">),</span> <span class="mi">3</span><span class="p">)</span>
+<span class="linenos">6</span>
+<span class="linenos">7</span><span class="c1"># attach the calculator to the atoms object</span>
+<span class="linenos">8</span><span class="n">si</span><span class="o">.</span><span class="n">calc</span> <span class="o">=</span> <span class="n">MatterSimCalculator</span><span class="p">()</span>
 </pre></div>
 </div>
 </section>
 <section id="run-the-relaxation">
 <h2><span class="section-number">1.3. </span>Run the relaxation<a class="headerlink" href="#run-the-relaxation" title="Link to this heading">#</a></h2>
 <p>MatterSim implements a built-in relaxation class to support the relaxation of ase atoms.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># initialize the relaxation object</span>
-<span class="n">relaxer</span> <span class="o">=</span> <span class="n">Relaxer</span><span class="p">(</span>
-    <span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;BFGS&quot;</span><span class="p">,</span> <span class="c1"># the optimization method</span>
-    <span class="nb">filter</span><span class="o">=</span><span class="s2">&quot;ExpCellFilter&quot;</span><span class="p">,</span> <span class="c1"># filter to apply to the cell</span>
-    <span class="n">constrain_symmetry</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="c1"># whether to constrain the symmetry</span>
-<span class="p">)</span>
-
-<span class="n">relaxed_structure</span> <span class="o">=</span> <span class="n">relaxer</span><span class="o">.</span><span class="n">relax</span><span class="p">(</span><span class="n">si</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="c1"># initialize the relaxation object</span>
+<span class="linenos">2</span><span class="n">relaxer</span> <span class="o">=</span> <span class="n">Relaxer</span><span class="p">(</span>
+<span class="linenos">3</span>    <span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;BFGS&quot;</span><span class="p">,</span> <span class="c1"># the optimization method</span>
+<span class="linenos">4</span>    <span class="nb">filter</span><span class="o">=</span><span class="s2">&quot;ExpCellFilter&quot;</span><span class="p">,</span> <span class="c1"># filter to apply to the cell</span>
+<span class="linenos">5</span>    <span class="n">constrain_symmetry</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="c1"># whether to constrain the symmetry</span>
+<span class="linenos">6</span><span class="p">)</span>
+<span class="linenos">7</span>
+<span class="linenos">8</span><span class="n">relaxed_structure</span> <span class="o">=</span> <span class="n">relaxer</span><span class="o">.</span><span class="n">relax</span><span class="p">(</span><span class="n">si</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>

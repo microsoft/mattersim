@@ -7,6 +7,7 @@ Import the necessary modules
 ----------------------------
 
 .. code-block:: python
+    :linenos:
 
     import numpy as np
     from ase.build import bulk
@@ -18,6 +19,7 @@ Set up the structure to relax
 -----------------------------
 
 .. code-block:: python
+    :linenos:
 
     # initialize the structure of silicon
     si = bulk("Si", "diamond", a=5.43)
@@ -34,6 +36,7 @@ Run the relaxation
 MatterSim implements a built-in relaxation class to support the relaxation of ase atoms.
 
 .. code-block:: python
+    :linenos:
 
     # initialize the relaxation object
     relaxer = Relaxer(
