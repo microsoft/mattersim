@@ -880,6 +880,7 @@ class Potential(nn.Module):
             load_path = os.path.join(
                 current_dir, "..", "pretrained_models/mattersim-v1.0.0-5M.pth"
             )
+            logger.info(f"Loading the pre-trained {os.path.basename(load_path)} model")
         else:
             logger.info("Loading the model from %s" % load_path)
         assert os.path.exists(load_path), f"Model file {load_path} not found"
