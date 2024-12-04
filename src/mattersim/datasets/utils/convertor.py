@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import warnings
 from typing import Optional, Tuple
 
 import ase
@@ -9,6 +10,9 @@ from pymatgen.optimization.neighbors import find_points_in_spheres
 from torch_geometric.data import Data
 
 from .threebody_indices import compute_threebody as _compute_threebody
+
+# Ensure the warning is only shown once
+warnings.filterwarnings("once", category=UserWarning)
 
 """
 Supported Properties:
@@ -112,12 +116,22 @@ def get_fixed_radius_bonding(
     """
     if isinstance(structure, Atoms):
         pbc_ = np.array(structure.pbc, dtype=int)
-        if np.all(pbc_ < 0.1) or not pbc:
+        if np.all(pbc_ < 0.01) or not pbc:
+            min_x = np.min(structure.positions[:, 0])
+            min_y = np.min(structure.positions[:, 1])
+            min_z = np.min(structure.positions[:, 2])
+            max_x = np.max(structure.positions[:, 0])
+            max_y = np.max(structure.positions[:, 1])
+            max_z = np.max(structure.positions[:, 2])
+            x_len = max((max_x - min_x) * 10, 1000)
+            y_len = max((max_y - min_y) * 10, 1000)
+            z_len = max((max_z - min_z) * 10, 1000)
             lattice_matrix = np.array(
-                [[1000.0, 0.0, 0.0], [0.0, 1000.0, 0.0], [0.0, 0.0, 1000.0]],
+                [[x_len, 0.0, 0.0], [0.0, y_len, 0.0], [0.0, 0.0, z_len]],
                 dtype=float,
             )
-            pbc_ = np.array([0, 0, 0], dtype=int)
+            pbc_ = np.array([1, 1, 1], dtype=int)
+            warnings.warn("No PBC detected, using a large supercell", UserWarning)
         else:
             lattice_matrix = np.ascontiguousarray(
                 structure.cell[:], dtype=float
