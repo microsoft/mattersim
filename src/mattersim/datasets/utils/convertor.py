@@ -133,6 +133,8 @@ def get_fixed_radius_bonding(
             pbc_ = np.array([1, 1, 1], dtype=int)
             warnings.warn("No PBC detected, using a large supercell", UserWarning)
         else:
+            if np.all(structure.cell < 1e-5):
+                raise ValueError("Cell vectors are too small")
             lattice_matrix = np.ascontiguousarray(
                 structure.cell[:], dtype=float
             )  # noqa: E501
