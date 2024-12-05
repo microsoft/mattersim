@@ -18,5 +18,5 @@ include src
 
 # Exclude directories
 exclude docs
-exclude pretrained_models
+exclude pretrained_models/*.pth
 exclude tests
