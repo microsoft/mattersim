@@ -2,7 +2,6 @@
 """
 Potential
 """
-import logging
 import os
 import pickle
 import random
@@ -19,6 +18,7 @@ from ase.calculators.calculator import Calculator
 from ase.constraints import full_3x3_to_voigt_6_stress
 from ase.units import GPa
 from deprecated import deprecated
+from loguru import logger
 from torch.optim import Adam
 from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
 from torch_ema import ExponentialMovingAverage
@@ -28,16 +28,9 @@ from torchmetrics import MeanMetric
 from mattersim.datasets.utils.build import build_dataloader
 from mattersim.forcefield.m3gnet.m3gnet import M3Gnet
 from mattersim.jit_compile_tools.jit import compile_mode
+from mattersim.utils.download_utils import download_checkpoint
 
 rank = int(os.getenv("RANK", 0))
-
-if rank == 0:
-    logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-    )
-else:
-    logging.basicConfig(level=logging.CRITICAL)
-logger = logging.getLogger(__name__)
 
 
 @compile_mode("script")
@@ -863,23 +856,36 @@ class Potential(nn.Module):
         if model_name.lower() != "m3gnet":
             raise NotImplementedError
 
-        current_dir = os.path.dirname(__file__)
+        checkpoint_folder = os.path.expanduser("~/.local/mattersim/pretrained_models")
+        os.makedirs(checkpoint_folder, exist_ok=True)
         if (
             load_path is None
             or load_path.lower() == "mattersim-v1.0.0-1m.pth"
             or load_path.lower() == "mattersim-v1.0.0-1m"
         ):
-            load_path = os.path.join(
-                current_dir, "..", "pretrained_models/mattersim-v1.0.0-1M.pth"
-            )
+            load_path = os.path.join(checkpoint_folder, "mattersim-v1.0.0-1M.pth")
+            if not os.path.exists(load_path):
+                logger.info(
+                    "The pre-trained model is not found locally, "
+                    "attempting to download it from the server."
+                )
+                download_checkpoint(
+                    "mattersim-v1.0.0-1M.pth", save_folder=checkpoint_folder
+                )
             logger.info(f"Loading the pre-trained {os.path.basename(load_path)} model")
         elif (
             load_path.lower() == "mattersim-v1.0.0-5m.pth"
             or load_path.lower() == "mattersim-v1.0.0-5m"
         ):
-            load_path = os.path.join(
-                current_dir, "..", "pretrained_models/mattersim-v1.0.0-5M.pth"
-            )
+            load_path = os.path.join(checkpoint_folder, "mattersim-v1.0.0-5M.pth")
+            if not os.path.exists(load_path):
+                logger.info(
+                    "The pre-trained model is not found locally, "
+                    "attempting to download it from the server."
+                )
+                download_checkpoint(
+                    "mattersim-v1.0.0-5M.pth", save_folder=checkpoint_folder
+                )
             logger.info(f"Loading the pre-trained {os.path.basename(load_path)} model")
         else:
             logger.info("Loading the model from %s" % load_path)
@@ -979,6 +985,7 @@ class Potential(nn.Module):
             logger.info(f"Loading the pre-trained {os.path.basename(load_path)} model")
         else:
             logger.info("Loading the model from %s" % load_path)
+
         assert os.path.exists(load_path), f"Model file {load_path} not found"
 
         checkpoint = torch.load(load_path, map_location=device)

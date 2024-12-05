@@ -1,2 +1,22 @@
-include src/mattersim/pretrained_models/*.pth
-include src/mattersim/datasets/utils/*.pyx
+# Documentation files
+include CITATION.cff
+include CODE_OF_CONDUCT.md
+include CONTRIBUTING.md
+include LICENSE.txt
+include MODEL_CARD.md
+include README.md
+include SECURITY.md
+
+# Configuration files
+include MANIFEST.in
+include environment.yaml
+include pyproject.toml
+include setup.py
+
+# Source code
+include src
+
+# Exclude directories
+exclude docs
+exclude pretrained_models
+exclude tests
