@@ -211,32 +211,6 @@ class GraphConvertor:
         else:
             raise ValueError("structure type not supported")
 
-        if isinstance(atoms, Atoms):
-            pbc_ = np.array(atoms.pbc, dtype=int)
-            if np.all(pbc_ < 0.01) or not pbc:
-                min_x = np.min(atoms.positions[:, 0])
-                min_y = np.min(atoms.positions[:, 1])
-                min_z = np.min(atoms.positions[:, 2])
-                max_x = np.max(atoms.positions[:, 0])
-                max_y = np.max(atoms.positions[:, 1])
-                max_z = np.max(atoms.positions[:, 2])
-                x_len = max((max_x - min_x) * 10, 1000)
-                y_len = max((max_y - min_y) * 10, 1000)
-                z_len = max((max_z - min_z) * 10, 1000)
-                lattice_matrix = np.array(
-                    [[x_len, 0.0, 0.0], [0.0, y_len, 0.0], [0.0, 0.0, z_len]],
-                    dtype=float,
-                )
-                pbc_ = np.array([1, 1, 1], dtype=int)
-                warnings.warn("No PBC detected, using a large supercell", UserWarning)
-                atoms.set_cell(lattice_matrix)
-                atoms.set_pbc(pbc_)
-            else:
-                if np.all(atoms.cell < 1e-5):
-                    raise ValueError("Cell vectors are too small")
-        else:
-            raise ValueError("structure type not supported")
-
         scaled_pos = atoms.get_scaled_positions()
         scaled_pos = np.mod(scaled_pos, 1)
         atoms.set_scaled_positions(scaled_pos)
