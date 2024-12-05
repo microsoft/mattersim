@@ -2,7 +2,6 @@
 """
 Potential
 """
-import logging
 import os
 import pickle
 import random
@@ -19,6 +18,7 @@ from ase.calculators.calculator import Calculator
 from ase.constraints import full_3x3_to_voigt_6_stress
 from ase.units import GPa
 from deprecated import deprecated
+from loguru import logger
 from torch.optim import Adam
 from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
 from torch_ema import ExponentialMovingAverage
@@ -31,14 +31,6 @@ from mattersim.jit_compile_tools.jit import compile_mode
 from mattersim.utils.download_utils import download_checkpoint
 
 rank = int(os.getenv("RANK", 0))
-
-if rank == 0:
-    logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-    )
-else:
-    logging.basicConfig(level=logging.CRITICAL)
-logger = logging.getLogger(__name__)
 
 
 @compile_mode("script")
@@ -873,6 +865,10 @@ class Potential(nn.Module):
         ):
             load_path = os.path.join(checkpoint_folder, "mattersim-v1.0.0-1M.pth")
             if not os.path.exists(load_path):
+                logger.info(
+                    "The pre-trained model is not found locally, "
+                    "attempting to download it from the server."
+                )
                 download_checkpoint(
                     "mattersim-v1.0.0-1M.pth", save_folder=checkpoint_folder
                 )
@@ -883,6 +879,10 @@ class Potential(nn.Module):
         ):
             load_path = os.path.join(checkpoint_folder, "mattersim-v1.0.0-5M.pth")
             if not os.path.exists(load_path):
+                logger.info(
+                    "The pre-trained model is not found locally, "
+                    "attempting to download it from the server."
+                )
                 download_checkpoint(
                     "mattersim-v1.0.0-5M.pth", save_folder=checkpoint_folder
                 )
