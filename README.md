@@ -23,7 +23,8 @@ This README provides a quick start guide. For more comprehensive information, pl
 ## Installation
 
 ### Prerequisite
-* Python==3.9
+* `Python >= 3.9`
+
 
 ### Install from PyPI
 > [!TIP]
@@ -37,6 +38,8 @@ This README provides a quick start guide. For more comprehensive information, pl
 > conda activate mattersim
 > ```
 >
+> Although MatterSim can be installed with `Python > 3.9`, we recommend using `Python == 3.9` for optimal compatibility.
+> Additionally, if you are using Mac OS X with Apple Silicon, please be aware of potential numerical instability with the MPS backend. In such cases, we advise using the CPU device for MatterSim.
 
 To install MatterSim, use the following command. Please note that downloading the dependencies may take some time:
 ```bash
