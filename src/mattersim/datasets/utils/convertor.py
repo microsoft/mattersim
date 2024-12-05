@@ -206,7 +206,7 @@ class GraphConvertor:
                 atoms.set_cell(lattice_matrix)
                 atoms.set_pbc(pbc_)
             else:
-                if np.all(atoms.cell < 1e-5):
+                if np.all(abs(atoms.cell) < 1e-5):
                     raise ValueError("Cell vectors are too small")
         else:
             raise ValueError("structure type not supported")
