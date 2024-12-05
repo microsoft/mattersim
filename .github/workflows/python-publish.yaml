@@ -40,9 +40,11 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
+          name: dist-sdist
           path: dist/*.tar.gz
 
   build_wheels:
+    if: false
     strategy:
       matrix:
         os: [ubuntu-latest, macos-14]
