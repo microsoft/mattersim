@@ -73,6 +73,21 @@ uv pip install -e .
 python setup.py build_ext --inplace
 ```
 
+## Pre-trained Models
+
+We currently offer two pre-trained **MatterSim-v1** models based on the **M3GNet** architecture in the [pretrained_models](./pretrained_models/) folder:
+
+1. **MatterSim-v1.0.0-1M**: A mini version of the model that is faster to run.
+2. **MatterSim-v1.0.0-5M**: A larger version of the model that is more accurate.
+
+These models have been trained using the data generated through the workflows
+introduced in the [MatterSim manuscript](https://arxiv.org/abs/2405.04967), which provides an in-depth
+explanation of the methodologies underlying the MatterSim model.
+
+More advanced and fully-supported pretrained versions of MatterSim,
+and additional materials capabilities are available in
+**[Azure Quantum Elements](https://quantum.microsoft.com/en-us/solutions/azure-quantum-elements)**.
+
 ## Usage
 
 > [!TIP]
