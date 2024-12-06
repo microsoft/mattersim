@@ -30,6 +30,10 @@ These models have been trained using the data generated through the workflows
 introduced in the `MatterSim <https://arxiv.org/abs/2405.04967>`_ manuscript, which provides an in-depth
 explanation of the methodologies underlying the MatterSim model.
 
+More advanced and fully-supported pretrained versions of MatterSim,
+and additional materials capabilities are available in
+`Azure Quantum Elements <https://quantum.microsoft.com/en-us/solutions/azure-quantum-elements>`_.
+
 Bibliography
 ------------
 
