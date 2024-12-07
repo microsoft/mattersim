@@ -37,7 +37,7 @@ dependencies = [
     "azure-storage-blob",
     "azure-identity",
     "mp-api",
-    "emmet-core<0.84",
+    "emmet-core>=0.84",
     "pydantic==2.9.2",
     "deprecated"
 ]
