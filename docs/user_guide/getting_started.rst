@@ -59,7 +59,7 @@ a list of structures using the ``Potential`` class.
     # load the model
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Running MatterSim on {device}")
-    potential = Potential.load(device=device)
+    potential = Potential.from_checkpoint(device=device)
 
     # build the dataloader that is compatible with MatterSim
     dataloader = build_dataloader(structures, only_inference=True)

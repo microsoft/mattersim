@@ -965,27 +965,39 @@ class Potential(nn.Module):
         if model_name.lower() != "m3gnet":
             raise NotImplementedError
 
-        current_dir = os.path.dirname(__file__)
+        checkpoint_folder = os.path.expanduser("~/.local/mattersim/pretrained_models")
+        os.makedirs(checkpoint_folder, exist_ok=True)
         if (
             load_path is None
             or load_path.lower() == "mattersim-v1.0.0-1m.pth"
             or load_path.lower() == "mattersim-v1.0.0-1m"
         ):
-            load_path = os.path.join(
-                current_dir, "..", "pretrained_models/mattersim-v1.0.0-1M.pth"
-            )
+            load_path = os.path.join(checkpoint_folder, "mattersim-v1.0.0-1M.pth")
+            if not os.path.exists(load_path):
+                logger.info(
+                    "The pre-trained model is not found locally, "
+                    "attempting to download it from the server."
+                )
+                download_checkpoint(
+                    "mattersim-v1.0.0-1M.pth", save_folder=checkpoint_folder
+                )
             logger.info(f"Loading the pre-trained {os.path.basename(load_path)} model")
         elif (
             load_path.lower() == "mattersim-v1.0.0-5m.pth"
             or load_path.lower() == "mattersim-v1.0.0-5m"
         ):
-            load_path = os.path.join(
-                current_dir, "..", "pretrained_models/mattersim-v1.0.0-5M.pth"
-            )
+            load_path = os.path.join(checkpoint_folder, "mattersim-v1.0.0-5M.pth")
+            if not os.path.exists(load_path):
+                logger.info(
+                    "The pre-trained model is not found locally, "
+                    "attempting to download it from the server."
+                )
+                download_checkpoint(
+                    "mattersim-v1.0.0-5M.pth", save_folder=checkpoint_folder
+                )
             logger.info(f"Loading the pre-trained {os.path.basename(load_path)} model")
         else:
             logger.info("Loading the model from %s" % load_path)
-
         assert os.path.exists(load_path), f"Model file {load_path} not found"
 
         checkpoint = torch.load(load_path, map_location=device)
