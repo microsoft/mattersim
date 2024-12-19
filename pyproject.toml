@@ -1,5 +1,11 @@
 [build-system]
-requires = ["setuptools>=45", "wheel", "Cython>=0.29.32", "numpy<2", "setuptools_scm"]
+requires = [
+    "Cython>=0.29.32",
+    "numpy<2",
+    "setuptools>=45",
+    "setuptools_scm",
+    "wheel",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,61 +13,60 @@ name = "mattersim"
 dynamic = ["version"]
 description = "MatterSim: A Deep Learning Atomistic Model Across Elements, Temperatures and Pressures."
 authors = [
-    {name = "Han Yang", email = "hanyang@microsoft.com"},
-    {name = "Jielan Li", email = "jielanli@microsoft.com"},
-    {name = "Hongxia Hao", email = "hongxiahao@microsoft.com"},
-    {name = "Ziheng Lu", email = "zihenglu@microsoft.com"}
+    { name = "Han Yang", email = "hanyang@microsoft.com" },
+    { name = "Hongxia Hao", email = "hongxiahao@microsoft.com" },
+    { name = "Jielan Li", email = "jielanli@microsoft.com" },
+    { name = "Ziheng Lu", email = "zihenglu@microsoft.com" },
 ]
 readme = "README.md"
 requires-python = ">=3.9"
 classifiers = [
-    "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
 ]
 dependencies = [
     "ase>=3.23.0",
-    "e3nn==0.5.0",
-    "seekpath",
-    "numpy<2",
-    "pymatgen",
-    "loguru",
-    "torch==2.2.0",
-    "torchvision==0.17.0",
-    "torchaudio==2.2.0",
-    "torch_runstats==0.2.0",
-    "torch_geometric==2.5.3",
-    "torchmetrics>=0.10.0",
-    "torch-ema==0.3",
-    "opt_einsum_fx",
-    "azure-storage-blob",
     "azure-identity",
+    "azure-storage-blob",
+    "deprecated",
+    "e3nn>=0.5.0",
+    "emmet-core>=0.84",
+    "loguru",
     "mp-api",
-    "emmet-core<0.84",
-    "pydantic==2.9.2",
-    "deprecated"
+    "numpy<2",
+    "opt_einsum_fx",
+    "pydantic>=2.9.2",
+    "pymatgen",
+    "seekpath",
+    "torch-ema>=0.3",
+    "torch>=2.2.0",
+    "torch_geometric>=2.5.3",
+    "torch_runstats>=0.2.0",
+    "torchaudio>=2.2.0",
+    "torchmetrics>=0.10.0",
+    "torchvision>=0.17.0",
 ]
 
 [project.optional-dependencies]
 dev = [
+    "ipykernel",
+    "ipython",
+    "pre-commit",
     "pytest",
     "pytest-cov",
     "pytest-testmon",
-    "pre-commit",
-    "ipython",
-    "ipykernel"
 ]
 
 docs = [
+    "nbconvert",
+    "nbsphinx",
+    "recommonmark",
     "sphinx",
     "sphinx-autodoc-typehints",
-    "sphinx_book_theme",
     "sphinx-copybutton",
-    "recommonmark",
-    "nbsphinx",
-    "nbconvert",
+    "sphinx_book_theme",
 ]
-
 
 
 [project.urls]
@@ -69,7 +74,7 @@ docs = [
 "Bug Tracker" = "https://github.com/microsoft/mattersim/issues"
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = { "" = "src" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
