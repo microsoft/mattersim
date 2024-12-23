@@ -6,8 +6,8 @@ dependencies:
   - ca-certificates
   - openssl
   - numpy<2
-  - phonopy==2.14.0
-  - phono3py==2.3.0
+  - phonopy
+  - phono3py
   - cython>=0.29.32
   - setuptools>=45
   - wheel
