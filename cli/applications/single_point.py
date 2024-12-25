@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 This script is used to predict single point properties for a list of atoms.
+The predicted properties include energy, energy per atom, forces, and stress.
+The energies are predicted in eV, forces in eV/Angstrom, and stress in eV/Angstrom^3.
 """
 import argparse
 
@@ -8,6 +10,8 @@ from ase import Atoms
 from ase.io import read as ase_read
 from loguru import logger
 from tqdm import tqdm
+
+from mattersim.forcefield import MatterSimCalculator
 
 
 def predict_single_point_properties(
@@ -48,22 +52,42 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Predict single point properties for a list of atoms."
     )
-    parser.add_argument("--structure-file", type=str, help="Path to the atoms file.")
+    parser.add_argument(
+        "--structure-file",
+        type=str,
+        nargs="+",
+        help="Path to the atoms structure file(s).",
+    )
     parser.add_argument(
         "--mattersim-model",
         type=str,
         choices=["mattersim-v1.0.0-1m", "mattersim-v1.0.0-5m"],
         default="mattersim-v1.0.0-1m",
-        help="Name of the MatterSim model. Allowed values are: model1, model2, model3.",
+        help="MatterSim model to use for prediction. Available models are: "
+        "mattersim-v1.0.0-1m, mattersim-v1.0.0-5m",
+    )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="cpu",
+        choices=["cpu", "cuda"],
+        help="Device to use for prediction. Default is cpu.",
     )
     args = parser.parse_args()
 
     logger.info("Initializing MatterSim calculator.")
+    calc = MatterSimCalculator(load_path=args.mattersim_model, device=args.device)
 
     logger.info(f"Reading atoms structures from {args.structure_file}")
-    atoms_list = ase_read(args.structure_file, index=":")
+    atoms_list = []
+    for structure_file in args.structure_file:
+        atoms_list += ase_read(structure_file, index=":")
+    for atoms in atoms_list:
+        atoms.calc = calc
     logger.info(f"Read {len(atoms_list)} atoms structures.")
 
     pred_results = predict_single_point_properties(atoms_list)
-    logger.info(pred_results)
+
+    for key, value in pred_results.items():
+        logger.info(f"Predicted {key}: {value}")
     logger.info("Prediction finished.")
