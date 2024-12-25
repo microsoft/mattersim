@@ -70,7 +70,6 @@ To install the package, run the following command under the root of the folder:
 mamba env create -f environment.yaml
 mamba activate mattersim
 uv pip install -e .
-python setup.py build_ext --inplace
 ```
 
 ## Pre-trained Models
@@ -96,20 +95,21 @@ and additional materials capabilities are available in
 ### A minimal test
 ```python
 import torch
+from loguru import logger
 from ase.build import bulk
 from ase.units import GPa
 from mattersim.forcefield import MatterSimCalculator
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-print(f"Running MatterSim on {device}")
+logger.info(f"Running MatterSim on {device}")
 
 si = bulk("Si", "diamond", a=5.43)
 si.calc = MatterSimCalculator(device=device)
-print(f"Energy (eV)                 = {si.get_potential_energy()}")
-print(f"Energy per atom (eV/atom)   = {si.get_potential_energy()/len(si)}")
-print(f"Forces of first atom (eV/A) = {si.get_forces()[0]}")
-print(f"Stress[0][0] (eV/A^3)       = {si.get_stress(voigt=False)[0][0]}")
-print(f"Stress[0][0] (GPa)          = {si.get_stress(voigt=False)[0][0] / GPa}")
+logger.info(f"Energy (eV)                 = {si.get_potential_energy()}")
+logger.info(f"Energy per atom (eV/atom)   = {si.get_potential_energy()/len(si)}")
+logger.info(f"Forces of first atom (eV/A) = {si.get_forces()[0]}")
+logger.info(f"Stress[0][0] (eV/A^3)       = {si.get_stress(voigt=False)[0][0]}")
+logger.info(f"Stress[0][0] (GPa)          = {si.get_stress(voigt=False)[0][0] / GPa}")
 ```
 
 In this release, we provide two checkpoints: `MatterSim-v1.0.0-1M.pth` and `MatterSim-v1.0.0-5M.pth`. By default, the `1M` version is loaded.
