@@ -18,7 +18,6 @@ from ase.calculators.calculator import Calculator
 from ase.constraints import full_3x3_to_voigt_6_stress
 from ase.units import GPa
 from deprecated import deprecated
-from loguru import logger
 from torch.optim import Adam
 from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
 from torch_ema import ExponentialMovingAverage
@@ -29,8 +28,10 @@ from mattersim.datasets.utils.build import build_dataloader
 from mattersim.forcefield.m3gnet.m3gnet import M3Gnet
 from mattersim.jit_compile_tools.jit import compile_mode
 from mattersim.utils.download_utils import download_checkpoint
+from mattersim.utils.logger_utils import get_logger
 
 rank = int(os.getenv("RANK", 0))
+logger = get_logger()
 
 
 @compile_mode("script")
@@ -101,7 +102,8 @@ class Potential(nn.Module):
         self.last_epoch = kwargs.get("last_epoch", -1)
         self.description = kwargs.get("description", "")
         self.saved_name = ["loss", "MAE_energy", "MAE_force", "MAE_stress"]
-        self.best_metric = 10
+        self.best_metric = 10000
+        self.best_metric_epoch = 0
         self.rank = None
 
         self.use_finetune_label_loss = kwargs.get("use_finetune_label_loss", False)
@@ -269,7 +271,7 @@ class Potential(nn.Module):
                         num_workers=0,
                         sampler=atoms_train_sampler,
                     )
-                    self.train_one_epoch(
+                    metric = self.train_one_epoch(
                         train_dataloader,
                         epoch,
                         loss,
@@ -287,7 +289,7 @@ class Potential(nn.Module):
                     del train_data
                     torch.cuda.empty_cache()
             else:
-                self.train_one_epoch(
+                metric = self.train_one_epoch(
                     dataloader,
                     epoch,
                     loss,
@@ -301,20 +303,21 @@ class Potential(nn.Module):
                     mode="train",
                     **kwargs,
                 )
-            metric = self.train_one_epoch(
-                val_dataloader,
-                epoch,
-                loss,
-                include_energy,
-                include_forces,
-                include_stresses,
-                force_loss_ratio,
-                stress_loss_ratio,
-                wandb,
-                is_distributed,
-                mode="val",
-                **kwargs,
-            )
+            if val_dataloader is not None:
+                metric = self.train_one_epoch(
+                    val_dataloader,
+                    epoch,
+                    loss,
+                    include_energy,
+                    include_forces,
+                    include_stresses,
+                    force_loss_ratio,
+                    stress_loss_ratio,
+                    wandb,
+                    is_distributed,
+                    mode="val",
+                    **kwargs,
+                )
 
             if isinstance(self.scheduler, ReduceLROnPlateau):
                 self.scheduler.step(metric)
@@ -330,7 +333,6 @@ class Potential(nn.Module):
                 "MAE_stress": metric[3],
             }
             if is_distributed:
-                # TODO add distributed early stopping
                 if self.save_model_ddp(
                     epoch,
                     early_stop_patience,
@@ -426,9 +428,13 @@ class Potential(nn.Module):
             # so this operation should not be performed.
             # Only save the model on GPU 0,
             # the model on each GPU should be exactly the same.
+            if epoch > self.best_metric_epoch + early_stop_patience:
+                logger.info("Early stopping")
+                return True
 
             if metric[self.idx] < self.best_metric:
                 self.best_metric = metric[self.idx]
+                self.best_metric_epoch = epoch
                 if save_checkpoint and self.rank == 0:
                     self.save(os.path.join(save_path, "best_model.pth"))
             if self.rank == 0 and save_checkpoint:
@@ -638,8 +644,7 @@ class Potential(nn.Module):
                 step=epoch,
             )
 
-        if mode == "val":
-            return (loss_avg_, e_mae, f_mae, s_mae)
+        return (loss_avg_, e_mae, f_mae, s_mae)
 
     def loss_calc(
         self,
@@ -894,6 +899,7 @@ class Potential(nn.Module):
         checkpoint = torch.load(load_path, map_location=device)
 
         assert checkpoint["model_name"] == model_name
+        checkpoint["model_args"].update(kwargs)
         model = M3Gnet(device=device, **checkpoint["model_args"]).to(device)
         model.load_state_dict(checkpoint["model"], strict=False)
 
@@ -998,11 +1004,13 @@ class Potential(nn.Module):
             logger.info(f"Loading the pre-trained {os.path.basename(load_path)} model")
         else:
             logger.info("Loading the model from %s" % load_path)
+
         assert os.path.exists(load_path), f"Model file {load_path} not found"
 
         checkpoint = torch.load(load_path, map_location=device)
 
         assert checkpoint["model_name"] == model_name
+        checkpoint["model_args"].update(kwargs)
         model = M3Gnet(device=device, **checkpoint["model_args"]).to(device)
         model.load_state_dict(checkpoint["model"], strict=False)
 
