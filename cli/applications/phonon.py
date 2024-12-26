@@ -42,11 +42,12 @@ def predict_phonon(
             supercell generation. If not set, will automatic generate super
             -cell based on symmetry. Defaults to None.
     """
+    has_imaginary_list = []
     pred_phonon_list = []
     for atoms in tqdm(
         atoms_list, total=len(atoms_list), desc="Predicting phonon properties"
     ):
-        phonon = PhononWorkflow(
+        ph = PhononWorkflow(
             atoms=atoms,
             find_prim=find_prim,
             work_dir=work_dir,
@@ -55,10 +56,11 @@ def predict_phonon(
             qpoints_mesh=qpoints_mesh,
             max_atoms=max_atoms,
         )
-        phonon.run()
+        has_imaginary, phonon = ph.run()
+        has_imaginary_list.append(has_imaginary)
         pred_phonon_list.append(phonon)
 
-    return pred_phonon_list
+    return has_imaginary_list, pred_phonon_list
 
 
 if __name__ == "__main__":
