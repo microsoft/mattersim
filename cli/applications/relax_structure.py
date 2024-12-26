@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-
+"""
+Relax one or a list of structures using MatterSim.
+"""
 import argparse
 from typing import Iterable, List, Tuple, Union
 
