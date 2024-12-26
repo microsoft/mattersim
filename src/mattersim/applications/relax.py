@@ -8,6 +8,7 @@ from ase.filters import ExpCellFilter, FrechetCellFilter
 from ase.optimize import BFGS, FIRE
 from ase.optimize.optimize import Optimizer
 from ase.units import GPa
+from deprecated import deprecated
 
 
 class Relaxer(object):
@@ -108,6 +109,7 @@ class Relaxer(object):
         return converged, atoms
 
     @classmethod
+    @deprecated(reason="Use cli/applications/relax_structure.py instead.")
     def relax_structures(
         cls,
         atoms: Union[Atoms, Iterable[Atoms]],
