@@ -3,7 +3,6 @@ repos:
     rev: v4.2.0
     hooks:
       - id: end-of-file-fixer
-      - id: fix-encoding-pragma
       - id: mixed-line-ending
       - id: trailing-whitespace
       - id: check-json
