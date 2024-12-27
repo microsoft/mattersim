@@ -3,7 +3,7 @@ import logging
 import sys
 from typing import Dict, List, Union
 
-from ase import Atoms
+from ase import Atoms, units
 from ase.calculators.calculator import Calculator
 from ase.filters import ExpCellFilter
 from ase.optimize import BFGS, FIRE
@@ -37,7 +37,7 @@ class DummyBatchCalculator(Calculator):
         return atoms.arrays["forces"]
 
     def get_stress(self, atoms=None):
-        return atoms.info["stress"]
+        return units.GPa*atoms.info["stress"]
 
 
 class BatchRelaxer(object):
