@@ -26,8 +26,6 @@ __all__ = ["singlepoint", "phonon", "relax", "moldyn"]
 def singlepoint(
     atoms_list: List[Atoms],
     *,
-    mattersim_model: str,
-    device: str = "cpu",
     work_dir: str = str(uuid.uuid4()),
     save_csv: str = "results.csv.gz",
     **kwargs,
