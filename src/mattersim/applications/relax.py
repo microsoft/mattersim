@@ -56,7 +56,7 @@ class Relaxer(object):
         fmax: float = 0.01,
         params_filter: dict = {},
         **kwargs,
-    ) -> Atoms:
+    ) -> Tuple[bool, Atoms]:
         """
         Relax the atoms object.
 
