@@ -1,22 +1,13 @@
 # -*- coding: utf-8 -*-
-import copy
 import logging
-import os
 import sys
-import time
-import warnings
-from typing import Dict, Iterable, List, Optional, Union
+from typing import Dict, List, Union
 
-import ase
-import numpy as np
-import torch
 from ase import Atoms
 from ase.calculators.calculator import Calculator
-from ase.constraints import full_3x3_to_voigt_6_stress
 from ase.filters import ExpCellFilter
 from ase.optimize import BFGS, FIRE
 from ase.optimize.optimize import Optimizer
-from ase.units import GPa
 from tqdm import tqdm
 
 from mattersim.datasets.utils.build import build_dataloader
@@ -58,6 +49,8 @@ class BatchRelaxer(object):
         self,
         potential: Potential,
         optimizer: Union[Optimizer, str] = "FIRE",
+        fmax: float = 0.05,
+        max_natoms_per_batch: int = 512,
         ):
         self.potential = potential
         self.device = potential.device
@@ -66,7 +59,8 @@ class BatchRelaxer(object):
             if isinstance(optimizer, str)
             else optimizer
         )
-        self.relax_cell = filter is not None
+        self.fmax = fmax
+        self.max_natoms_per_batch = max_natoms_per_batch
         self.optimizer_instances: List[Optimizer] = []
         self.is_active_instance: List[bool] = []
         self.finished = False
@@ -74,10 +68,9 @@ class BatchRelaxer(object):
         self.trajectories: Dict[int, List[Atoms]] = {}
 
     def insert(self, atoms: Atoms):
-        atoms_ = atoms.copy()
-        atoms_.set_calculator(DummyBatchCalculator())
+        atoms.set_calculator(DummyBatchCalculator())
         optimizer_instance = self.optimizer(
-            ExpCellFilter(atoms_),
+            ExpCellFilter(atoms),
         )
         optimizer_instance.fmax = self.fmax
         self.optimizer_instances.append(optimizer_instance)
@@ -97,14 +90,14 @@ class BatchRelaxer(object):
             dataloader, include_forces=True, include_stresses=True
         )
 
-        cnt = 0
+        counter = 0
         self.finished = True
         for idx, fire in enumerate(self.optimizer_instances):
             if self.is_active_instance[idx]:
-                # Set the properties so the dummy calculator can return them later
-                fire.atoms.atoms.info["total_energy"] = energy_batch[cnt]
-                fire.atoms.atoms.arrays["forces"] = forces_batch[cnt]
-                fire.atoms.atoms.info["stress"] = stress_batch[cnt]
+                # Set the properties so the dummy calculator can return them within the optimizer step
+                fire.atoms.atoms.info["total_energy"] = energy_batch[counter]
+                fire.atoms.atoms.arrays["forces"] = forces_batch[counter]
+                fire.atoms.atoms.info["stress"] = stress_batch[counter]
                 try:
                     self.trajectories[fire.atoms.atoms.info["structure_index"]].append(fire.atoms.atoms.copy())
                 except KeyError:
@@ -118,7 +111,7 @@ class BatchRelaxer(object):
                         LOG.info(f"Relaxed {self.total_converged} structures.")
                 else:
                     self.finished = False
-                cnt += 1
+                counter += 1
 
         # remove inactive instances
         self.optimizer_instances = [
@@ -127,31 +120,28 @@ class BatchRelaxer(object):
         self.is_active_instance = [True] * len(self.optimizer_instances)
 
 
-    def run_all(
+    def relax(
         self,
         atoms_list: List[Atoms],
-        max_natoms_per_batch: int = 512,
-        fmax: float = 0.05,
     ) -> Dict[int, List[Atoms]]:
         self.trajectories = {}
-        self.fmax = fmax
         self.tqdmcounter = tqdm(total=len(atoms_list), file=sys.stdout)
         pointer = 0
-
+        atoms_list_ = []
         for i in range(len(atoms_list)):
-            atoms_list[i].info["structure_index"] = i
+            atoms_list_.append(atoms_list[i].copy())
+            atoms_list_[i].info["structure_index"] = i
 
         while (
-            pointer < len(atoms_list) or self.finished is False
-        ):  # While not all atoms are relaxed
+            pointer < len(atoms_list) or not self.finished
+        ):  # While there are unfinished instances or atoms left to insert
             while pointer < len(atoms_list) and (
                 sum([len(atoms.atoms) - 3 for atoms in self.optimizer_instances])
                 + len(atoms_list[pointer])
-                - 3
-                <= max_natoms_per_batch
+                <= self.max_natoms_per_batch
             ):  # While there are enough n_atoms slots in the batch and we have not reached the end of the list.
-                # The -3 is to account for the 3 degrees of freedom in the cell that are not atoms but are counted in the len(atoms)
-                self.insert(atoms_list[pointer])  #  Insert new structure to fire instances
+                # The -3 is to account for the 3 degrees of freedom in the expcell that are not atoms but are counted in the len(atoms)
+                self.insert(atoms_list_[pointer])  #  Insert new structure to fire instances
                 self.tqdmcounter.update(1)
                 pointer += 1
             self.step_batch()
