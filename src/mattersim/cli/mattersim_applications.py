@@ -25,15 +25,17 @@ __all__ = ["singlepoint", "phonon", "relax", "moldyn"]
 
 
 def singlepoint(
-    args: argparse.Namespace,
+    structure_file: Union[str, List[str]],
+    mattersim_model: str,
+    device: str = "cpu",
+    work_dir: str = str(uuid.uuid4()),
+    save_csv: str = "results.csv.gz",
 ):
     """
     Predict single point properties for a list of atoms.
 
     """
-    atoms_list = parse_atoms_list(
-        args.structure_file, args.mattersim_model, args.device
-    )
+    atoms_list = parse_atoms_list(structure_file, mattersim_model, device)
     logger.info(f"Predicting single point properties for {len(atoms_list)} structures.")
 
     logger.info("Predicting single point properties.")
@@ -50,13 +52,23 @@ def singlepoint(
         predicted_properties["stress"].append(atoms.get_stress(voigt=False))
         predicted_properties["stress_GPa"].append(atoms.get_stress(voigt=False) / GPa)
 
-    if not os.path.exists(args.work_dir):
-        os.makedirs(args.work_dir)
+    if not os.path.exists(work_dir):
+        os.makedirs(work_dir)
 
-    logger.info(f"Saving the results to {os.path.join(args.work_dir, args.save_csv)}")
+    logger.info(f"Saving the results to {os.path.join(work_dir, save_csv)}")
 
     df = pd.DataFrame(predicted_properties)
-    df.to_csv(os.path.join(args.work_dir, args.save_csv), index=False)
+    df.to_csv(os.path.join(work_dir, save_csv), index=False)
+
+
+def singlepoint_cli(args: argparse.Namespace):
+    singlepoint(
+        args.structure_file,
+        args.mattersim_model,
+        args.device,
+        args.work_dir,
+        args.save_csv,
+    )
 
 
 def relax(args: argparse.Namespace):
@@ -137,7 +149,7 @@ def main():
         "singlepoint", help="Predict single point properties for a list of atoms."
     )
     add_common_args(singlepoint_parser)
-    singlepoint_parser.set_defaults(func=singlepoint)
+    singlepoint_parser.set_defaults(func=singlepoint_cli)
 
     # Parse arguments
     args = argparser.parse_args()
