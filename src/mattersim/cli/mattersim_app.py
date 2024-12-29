@@ -1,6 +1,5 @@
 import argparse
 import uuid
-from collections import defaultdict
 from datetime import datetime
 from typing import List, Union
 
@@ -8,6 +7,7 @@ from ase import Atoms
 from ase.io import read as ase_read
 from loguru import logger
 
+from mattersim.cli.applications.moldyn import moldyn
 from mattersim.cli.applications.phonon import phonon
 from mattersim.cli.applications.relax import relax
 from mattersim.cli.applications.singlepoint import singlepoint
@@ -76,39 +76,6 @@ def phonon_cli(args: argparse.Namespace) -> dict:
         if k not in ["structure_file", "mattersim_model", "device"]
     }
     return phonon(atoms_list, **phonon_args)
-
-
-def moldyn(
-    atoms_list: List[Atoms],
-    *,
-    temperature: float = 300,
-    timestep: float = 1,
-    steps: int = 1000,
-    ensemble: str = "nvt_nose_hoover",
-    logfile: str = "-",
-    loginterval: int = 10,
-    trajectory: str = None,
-    taut: float = None,
-    work_dir: str = str(uuid.uuid4()),
-    save_csv: str = "results.csv.gz",
-    **kwargs,
-) -> dict:
-    moldyn_results = defaultdict(list)
-
-    # for atoms in atoms_list:
-
-    #     md = MolecularDynamics(
-    #         atoms,
-    #         ensemble=ensemble,
-    #         temperature=temperature,
-    #         timestep=timestep,
-    #         logfile=logfile,
-    #         loginterval=loginterval,
-    #         trajectory=trajectory,
-    #         taut=taut
-    #     )
-    #     md.run(steps)
-    return moldyn_results
 
 
 def moldyn_cli(args: argparse.Namespace) -> dict:
@@ -286,7 +253,7 @@ def add_moldyn_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--logfile",
         type=str,
-        default="-",
+        default="md.log",
         help="Logfile to write the output to. Default is stdout.",
     )
     parser.add_argument(
@@ -298,7 +265,7 @@ def add_moldyn_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--trajectory",
         type=str,
-        default=None,
+        default="md.traj",
         help="Path to the trajectory file.",
     )
 
