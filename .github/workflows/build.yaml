@@ -69,10 +69,17 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
+    - name: Update environment.yaml with Python ${{ matrix.python-version }}
+      run: |
+        case "$(uname -s)" in
+          Darwin*)
+            sed -i '' "s/- python=3.9/- python=${{ matrix.python-version }}/" environment.yaml
+            ;;
+          Linux*)
+            sed -i "s/- python=3.9/- python=${{ matrix.python-version }}/" environment.yaml
+            ;;
+        esac
+        cat environment.yaml
 
     - name: Restore build artifacts
       uses: actions/cache@v3
