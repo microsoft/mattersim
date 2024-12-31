@@ -9,7 +9,7 @@ on:
       - main
 
 jobs:
-  build_and_test:
+  build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -39,9 +39,52 @@ jobs:
       run: |
         micromamba run -n mattersim uv pip install -e .
 
-    - name: Install test dependencies
-      run: |
-        micromamba run -n mattersim uv pip install -e ".[dev]"
+    - name: Cache build artifacts
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/pip
+          .micromamba/envs/mattersim
+        key: ${{ runner.os }}-build-${{ matrix.python-version }}-${{ hashFiles('**/environment.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ matrix.python-version }}-
+
+  test:
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ['3.9', '3.10', '3.11', '3.12']
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Restore build artifacts
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/pip
+          .micromamba/envs/mattersim
+        key: ${{ runner.os }}-build-${{ matrix.python-version }}-${{ hashFiles('**/environment.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ matrix.python-version }}-
+
+    - name: Set up Micromamba
+      uses: mamba-org/setup-micromamba@v1
+      with:
+        micromamba-version: 'latest'
+        environment-file: environment.yaml
+        init-shell: >-
+          bash
+        cache-environment: true
+        post-cleanup: 'all'
 
     - name: Run tests
       run: |
