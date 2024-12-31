@@ -22,8 +22,14 @@ jobs:
 
     - name: Update environment.yaml with Python ${{ matrix.python-version }}
       run: |
-        sed -i "s/- python=3.9/- python=${{ matrix.python-version }}/" environment.yaml
-        cat environment.yaml
+        case "$(uname -s)" in
+          Darwin*)
+            sed -i '' "s/- python/- python=${{ matrix.python-version }}/" environment.yaml
+            ;;
+          Linux*)
+            sed -i "s/- python/- python=${{ matrix.python-version }}/" environment.yaml
+            ;;
+        esac
 
     - name: Set up Micromamba
       uses: mamba-org/setup-micromamba@v1
