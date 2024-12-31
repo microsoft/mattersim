@@ -22,14 +22,7 @@ jobs:
 
     - name: Update environment.yaml with Python ${{ matrix.python-version }}
       run: |
-        case "$(uname -s)" in
-          Darwin*)
-            sed -i '' "s/- python=3.9/- python=${{ matrix.python-version }}/" environment.yaml
-            ;;
-          Linux*)
-            sed -i "s/- python=3.9/- python=${{ matrix.python-version }}/" environment.yaml
-            ;;
-        esac
+        sed -i.bak "s/- python=3.9/- python=${{ matrix.python-version }}/" environment.yaml
         cat environment.yaml
 
     - name: Set up Micromamba
@@ -71,14 +64,7 @@ jobs:
 
     - name: Update environment.yaml with Python ${{ matrix.python-version }}
       run: |
-        case "$(uname -s)" in
-          Darwin*)
-            sed -i '' "s/- python=3.9/- python=${{ matrix.python-version }}/" environment.yaml
-            ;;
-          Linux*)
-            sed -i "s/- python=3.9/- python=${{ matrix.python-version }}/" environment.yaml
-            ;;
-        esac
+        sed -i.bak "s/- python=3.9/- python=${{ matrix.python-version }}/" environment.yaml
         cat environment.yaml
 
     - name: Restore build artifacts
