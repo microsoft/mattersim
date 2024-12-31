@@ -97,8 +97,6 @@ class BatchRelaxer(object):
 
         # Note: we use a batch size of len(atoms_list) because we only want to run one batch at a time
         dataloader = build_dataloader(atoms_list, batch_size=len(atoms_list), only_inference=True)
-        # in case we get a CUDA error inside the try/except, we can't get the number of atoms
-        # from CUDA anymore, so we need to get it before copying to CUDA.
         energy_batch, forces_batch, stress_batch = self.potential.predict_properties(
             dataloader, include_forces=True, include_stresses=True
         )
@@ -149,11 +147,10 @@ class BatchRelaxer(object):
             pointer < len(atoms_list) or not self.finished
         ):  # While there are unfinished instances or atoms left to insert
             while pointer < len(atoms_list) and (
-                sum([len(atoms.atoms) - 3 for atoms in self.optimizer_instances])
+                sum([len(atoms.atoms.atoms) for atoms in self.optimizer_instances])
                 + len(atoms_list[pointer])
                 <= self.max_natoms_per_batch
             ):  # While there are enough n_atoms slots in the batch and we have not reached the end of the list.
-                # The -3 is to account for the 3 degrees of freedom in the expcell that are not atoms but are counted in the len(atoms)
                 self.insert(atoms_list_[pointer])  #  Insert new structure to fire instances
                 self.tqdmcounter.update(1)
                 pointer += 1
