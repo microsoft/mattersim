@@ -5,7 +5,8 @@ from typing import Dict, List, Union
 
 from ase import Atoms, units
 from ase.calculators.calculator import Calculator
-from ase.filters import ExpCellFilter
+from ase.constraints import Filter
+from ase.filters import ExpCellFilter, FrechetCellFilter
 from ase.optimize import BFGS, FIRE
 from ase.optimize.optimize import Optimizer
 from tqdm import tqdm
@@ -41,14 +42,20 @@ class DummyBatchCalculator(Calculator):
 
 
 class BatchRelaxer(object):
-    """Relaxer is a class for structural relaxation with fixed volume."""
+    """BatchRelaxer is a class for batch structural relaxation.
+    It is more efficient than Relaxer when relaxing a large number of structures."""
 
     SUPPORTED_OPTIMIZERS = {"BFGS": BFGS, "FIRE": FIRE}
+    SUPPORTED_FILTERS = {
+        "EXPCELLFILTER": ExpCellFilter,
+        "FRECHETCELLFILTER": FrechetCellFilter,
+    }
 
     def __init__(
         self,
         potential: Potential,
         optimizer: Union[Optimizer, str] = "FIRE",
+        filter: Union[Filter, str, None] = None,
         fmax: float = 0.05,
         max_natoms_per_batch: int = 512,
         ):
@@ -59,6 +66,12 @@ class BatchRelaxer(object):
             if isinstance(optimizer, str)
             else optimizer
         )
+        if filter is not None:
+            self.filter = (
+                self.SUPPORTED_FILTERS[filter.upper()]
+                if isinstance(filter, str)
+                else filter
+            )
         self.fmax = fmax
         self.max_natoms_per_batch = max_natoms_per_batch
         self.optimizer_instances: List[Optimizer] = []
@@ -70,7 +83,7 @@ class BatchRelaxer(object):
     def insert(self, atoms: Atoms):
         atoms.set_calculator(DummyBatchCalculator())
         optimizer_instance = self.optimizer(
-            ExpCellFilter(atoms),
+            self.filter(atoms),
         )
         optimizer_instance.fmax = self.fmax
         self.optimizer_instances.append(optimizer_instance)
