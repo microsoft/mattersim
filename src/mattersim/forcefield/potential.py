@@ -7,7 +7,7 @@ import pickle
 import random
 import time
 import warnings
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -477,7 +477,7 @@ class Potential(nn.Module):
         include_forces: bool = False,
         include_stresses: bool = False,
         **kwargs,
-    ):
+    ) -> Tuple[List[float], List[np.ndarray], List[np.ndarray]]:
         """
         Predict properties (e.g., energies, forces) given a well-trained model
         Return: results tuple

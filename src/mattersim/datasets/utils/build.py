@@ -5,10 +5,8 @@ import warnings
 import numpy as np
 import torch
 from ase import Atoms
-from torch.utils.data import DataLoader as DataLoader_torch
 from torch_geometric.loader import DataLoader as DataLoader_pyg
 
-from mattersim.datasets.dataset import AtomCalDataset
 from mattersim.datasets.utils.convertor import GraphConvertor
 
 
