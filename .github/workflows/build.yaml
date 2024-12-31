@@ -24,10 +24,10 @@ jobs:
       run: |
         case "$(uname -s)" in
           Darwin*)
-            sed -i '' "s/- python/- python=${{ matrix.python-version }}/" environment.yaml
+            sed -i '' "s/- python=3.9/- python=${{ matrix.python-version }}/" environment.yaml
             ;;
           Linux*)
-            sed -i "s/- python/- python=${{ matrix.python-version }}/" environment.yaml
+            sed -i "s/- python=3.9/- python=${{ matrix.python-version }}/" environment.yaml
             ;;
         esac
 
