@@ -30,6 +30,7 @@ jobs:
             sed -i "s/- python=3.9/- python=${{ matrix.python-version }}/" environment.yaml
             ;;
         esac
+        cat environment.yaml
 
     - name: Set up Micromamba
       uses: mamba-org/setup-micromamba@v1
