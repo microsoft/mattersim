@@ -44,7 +44,7 @@ jobs:
     - name: Install dependencies
       shell: bash -l {0}
       run: |
-        uv pip install -e .
+        uv pip install .
 
     - name: Cache build artifacts
       uses: actions/cache@v3
@@ -96,7 +96,7 @@ jobs:
     - name: Install test dependencies
       shell: bash -l {0}
       run: |
-        uv pip install -e ".[dev]"
+        uv pip install ".[dev]"
 
     - name: Run tests
       run: |
