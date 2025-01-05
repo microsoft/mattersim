@@ -152,7 +152,7 @@ class BatchRelaxer(object):
             pointer < len(atoms_list) or not self.finished
         ):  # While there are unfinished instances or atoms left to insert
             while pointer < len(atoms_list) and (
-                sum([len(atoms.atoms) for atoms in self.optimizer_instances])
+                sum([len(opt.atoms) for opt in self.optimizer_instances])
                 + len(atoms_list[pointer])
                 <= self.max_natoms_per_batch
             ):
