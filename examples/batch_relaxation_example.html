@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Installation &#8212; MatterSim 1.0.0 documentation</title>
+    <title>3. Batch Structure Optimization &#8212; MatterSim 1.0.0 documentation</title>
   
   
   
@@ -47,11 +47,10 @@
     <script src="../_static/copybutton.js?v=f281be69"></script>
     <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/installation';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'examples/batch_relaxation_example';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Getting Started" href="getting_started.html" />
-    <link rel="prev" title="Welcome to the MatterSim Documentation!" href="../index.html" />
+    <link rel="prev" title="2. Phonon Dispersion" href="phonon_example.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -149,12 +148,12 @@
     <div class="bd-toc-item navbar-nav active">
         <p aria-level="2" class="caption" role="heading"><span class="caption-text">User Guide:</span></p>
 <ul class="current nav bd-sidenav">
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../examples/examples.html">Examples</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l2"><a class="reference internal" href="../examples/relax_example.html">1. Structure Optimization</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../examples/phonon_example.html">2. Phonon Dispersion</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../examples/batch_relaxation_example.html">3. Batch Structure Optimization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/getting_started.html">Getting Started</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="examples.html">Examples</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="relax_example.html">1. Structure Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="phonon_example.html">2. Phonon Dispersion</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">3. Batch Structure Optimization</a></li>
 </ul>
 </details></li>
 </ul>
@@ -231,7 +230,7 @@
       
       
       
-      <li><a href="../_sources/user_guide/installation.rst" target="_blank"
+      <li><a href="../_sources/examples/batch_relaxation_example.rst" target="_blank"
    class="btn btn-sm btn-download-source-button dropdown-item"
    title="Download source file"
    data-bs-placement="left" data-bs-toggle="tooltip"
@@ -307,7 +306,7 @@
               
 
 <div id="jb-print-docs-body" class="onlyprint">
-    <h1>Installation</h1>
+    <h1>Batch Structure Optimization</h1>
     <!-- Table of contents -->
     <div id="print-main-content">
         <div id="jb-print-toc">
@@ -317,9 +316,10 @@
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#install-from-pypi">Install from PyPI</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#install-from-source-code">Install from source code</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#model-checkpoints">Model checkpoints</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#import-the-necessary-modules">3.1. Import the necessary modules</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#set-up-the-mattersim-batch-relaxer">3.2. Set up the MatterSim batch relaxer</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#relax-the-structures">3.3. Relax the structures</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#inspect-the-relaxed-structures">3.4. Inspect the relaxed structures</a></li>
 </ul>
             </nav>
         </div>
@@ -331,42 +331,57 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="installation">
-<h1>Installation<a class="headerlink" href="#installation" title="Link to this heading">#</a></h1>
-<section id="install-from-pypi">
-<h2>Install from PyPI<a class="headerlink" href="#install-from-pypi" title="Link to this heading">#</a></h2>
-<p>To install the package, run the following command:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">pip install mattersim</span>
-</pre></div>
-</div>
-<p>In case you want to install the package with the latest version, you can run the following command:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">pip install git+https://github.com/microsoft/mattersim.git</span>
-</pre></div>
-</div>
-</section>
-<section id="install-from-source-code">
-<h2>Install from source code<a class="headerlink" href="#install-from-source-code" title="Link to this heading">#</a></h2>
-<p>To install the package, run the following command under the root of the folder:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">conda env create -f environment.yaml</span>
-<span class="go">conda activate mattersim</span>
-<span class="go">pip install -e .</span>
-<span class="go">python setup.py build_ext --inplace</span>
-</pre></div>
-</div>
-<p>Please note that the installation process may take a while due to the installation of the dependencies.
-For faster installation, we recommend the users to install with
-<a class="reference external" href="https://mamba.readthedocs.io/en/latest/index.html">mamba or micromamba</a>,
-and the <a class="reference external" href="https://docs.astral.sh/uv/">uv</a> package manager.</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">mamba env create -f environment.yaml</span>
-<span class="go">mamba activate mattersim</span>
-<span class="go">uv pip install -e .</span>
-<span class="go">python setup.py build_ext --inplace</span>
+  <section id="batch-structure-optimization">
+<h1><span class="section-number">3. </span>Batch Structure Optimization<a class="headerlink" href="#batch-structure-optimization" title="Link to this heading">#</a></h1>
+<p>This is a simple example of how to use MatterSim to efficiently relax a list of structures.</p>
+<section id="import-the-necessary-modules">
+<h2><span class="section-number">3.1. </span>Import the necessary modules<a class="headerlink" href="#import-the-necessary-modules" title="Link to this heading">#</a></h2>
+<p>First we import the necessary modules.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="kn">from</span><span class="w"> </span><span class="nn">ase.build</span><span class="w"> </span><span class="kn">import</span> <span class="n">bulk</span>
+<span class="linenos">2</span><span class="kn">from</span><span class="w"> </span><span class="nn">mattersim.applications.batch_relax</span><span class="w"> </span><span class="kn">import</span> <span class="n">BatchRelaxer</span>
+<span class="linenos">3</span><span class="kn">from</span><span class="w"> </span><span class="nn">mattersim.forcefield.potential</span><span class="w"> </span><span class="kn">import</span> <span class="n">Potential</span>
 </pre></div>
 </div>
 </section>
-<section id="model-checkpoints">
-<h2>Model checkpoints<a class="headerlink" href="#model-checkpoints" title="Link to this heading">#</a></h2>
-<p>The currently available model checkpoints can be found in the <a class="reference external" href="https://github.com/microsoft/mattersim/tree/main/src/mattersim/pretrained_models">MatterSim GitHub repository</a>.</p>
+<section id="set-up-the-mattersim-batch-relaxer">
+<h2><span class="section-number">3.2. </span>Set up the MatterSim batch relaxer<a class="headerlink" href="#set-up-the-mattersim-batch-relaxer" title="Link to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="c1"># initialize the default MatterSim Potential</span>
+<span class="linenos">2</span><span class="n">potential</span> <span class="o">=</span> <span class="n">Potential</span><span class="o">.</span><span class="n">from_checkpoint</span><span class="p">()</span>
+<span class="linenos">3</span>
+<span class="linenos">4</span><span class="c1"># initialize the batch relaxer with a EXPCELLFILTER for cell relaxation and a FIRE optimizer</span>
+<span class="linenos">5</span><span class="n">relaxer</span> <span class="o">=</span> <span class="n">BatchRelaxer</span><span class="p">(</span><span class="n">potential</span><span class="p">,</span> <span class="n">fmax</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="nb">filter</span><span class="o">=</span><span class="s2">&quot;EXPCELLFILTER&quot;</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;FIRE&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="relax-the-structures">
+<h2><span class="section-number">3.3. </span>Relax the structures<a class="headerlink" href="#relax-the-structures" title="Link to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="c1"># Here, we generate a list of ASE Atoms objects we want to relax</span>
+<span class="linenos">2</span><span class="n">atoms</span> <span class="o">=</span> <span class="p">[</span><span class="n">bulk</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">),</span> <span class="n">bulk</span><span class="p">(</span><span class="s2">&quot;Mg&quot;</span><span class="p">),</span> <span class="n">bulk</span><span class="p">(</span><span class="s2">&quot;Si&quot;</span><span class="p">),</span> <span class="n">bulk</span><span class="p">(</span><span class="s2">&quot;Ni&quot;</span><span class="p">)]</span>
+<span class="linenos">3</span>
+<span class="linenos">4</span><span class="c1"># And then perturb them a bit so that relaxation is not trivial</span>
+<span class="linenos">5</span><span class="k">for</span> <span class="n">atom</span> <span class="ow">in</span> <span class="n">atoms</span><span class="p">:</span>
+<span class="linenos">6</span>    <span class="n">atom</span><span class="o">.</span><span class="n">rattle</span><span class="p">(</span><span class="n">stdev</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+<span class="linenos">7</span>
+<span class="linenos">8</span><span class="c1"># Run the relaxation</span>
+<span class="linenos">9</span><span class="n">relaxation_trajectories</span> <span class="o">=</span> <span class="n">relaxer</span><span class="o">.</span><span class="n">relax</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="inspect-the-relaxed-structures">
+<h2><span class="section-number">3.4. </span>Inspect the relaxed structures<a class="headerlink" href="#inspect-the-relaxed-structures" title="Link to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="c1"># Extract the relaxed structures and corresponding energies</span>
+<span class="linenos"> 2</span><span class="n">relaxed_structures</span> <span class="o">=</span> <span class="p">[</span><span class="n">traj</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">relaxation_trajectories</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+<span class="linenos"> 3</span><span class="n">relaxed_energies</span> <span class="o">=</span> <span class="p">[</span><span class="n">structure</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;total_energy&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">structure</span> <span class="ow">in</span> <span class="n">relaxed_structures</span><span class="p">]</span>
+<span class="linenos"> 4</span>
+<span class="linenos"> 5</span><span class="c1"># Do the same with the initial structures and energies</span>
+<span class="linenos"> 6</span><span class="n">initial_structures</span> <span class="o">=</span> <span class="p">[</span><span class="n">traj</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">relaxation_trajectories</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+<span class="linenos"> 7</span><span class="n">initial_energies</span> <span class="o">=</span> <span class="p">[</span><span class="n">structure</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;total_energy&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">structure</span> <span class="ow">in</span> <span class="n">initial_structures</span><span class="p">]</span>
+<span class="linenos"> 8</span>
+<span class="linenos"> 9</span><span class="c1"># verify by inspection that total energy has decreased in all instances</span>
+<span class="linenos">10</span><span class="k">for</span> <span class="n">initial_energy</span><span class="p">,</span> <span class="n">relaxed_energy</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">initial_energies</span><span class="p">,</span> <span class="n">relaxed_energies</span><span class="p">):</span>
+<span class="linenos">11</span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initial energy: </span><span class="si">{</span><span class="n">initial_energy</span><span class="si">}</span><span class="s2"> eV, relaxed energy: </span><span class="si">{</span><span class="n">relaxed_energy</span><span class="si">}</span><span class="s2"> eV&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 </section>
 </section>
 
@@ -382,22 +397,13 @@ and the <a class="reference external" href="https://docs.astral.sh/uv/">uv</a> p
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="../index.html"
+       href="phonon_example.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Welcome to the MatterSim Documentation!</p>
+        <p class="prev-next-title"><span class="section-number">2. </span>Phonon Dispersion</p>
       </div>
-    </a>
-    <a class="right-next"
-       href="getting_started.html"
-       title="next page">
-      <div class="prev-next-info">
-        <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Getting Started</p>
-      </div>
-      <i class="fa-solid fa-angle-right"></i>
     </a>
 </div>
                 </footer>
@@ -416,9 +422,10 @@ and the <a class="reference external" href="https://docs.astral.sh/uv/">uv</a> p
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#install-from-pypi">Install from PyPI</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#install-from-source-code">Install from source code</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#model-checkpoints">Model checkpoints</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#import-the-necessary-modules">3.1. Import the necessary modules</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#set-up-the-mattersim-batch-relaxer">3.2. Set up the MatterSim batch relaxer</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#relax-the-structures">3.3. Relax the structures</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#inspect-the-relaxed-structures">3.4. Inspect the relaxed structures</a></li>
 </ul>
   </nav></div>
 

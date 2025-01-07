@@ -30,7 +30,7 @@
   <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 <link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=a3416100" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
   
@@ -50,6 +50,7 @@
     <script>DOCUMENTATION_OPTIONS.pagename = 'examples/phonon_example';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="3. Batch Structure Optimization" href="batch_relaxation_example.html" />
     <link rel="prev" title="1. Structure Optimization" href="relax_example.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -153,6 +154,7 @@
 <li class="toctree-l1 current active has-children"><a class="reference internal" href="examples.html">Examples</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="relax_example.html">1. Structure Optimization</a></li>
 <li class="toctree-l2 current active"><a class="current reference internal" href="#">2. Phonon Dispersion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batch_relaxation_example.html">3. Batch Structure Optimization</a></li>
 </ul>
 </details></li>
 </ul>
@@ -338,12 +340,12 @@
 <h2><span class="section-number">2.1. </span>Import the necessary modules<a class="headerlink" href="#import-the-necessary-modules" title="Link to this heading">#</a></h2>
 <p>First we import the necessary modules. It is worth noting
 that we have a built-in workflow for phonon calculations using <code class="docutils literal notranslate"><span class="pre">phonopy</span></code> in MatterSim.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="linenos">2</span><span class="kn">from</span> <span class="nn">ase.build</span> <span class="kn">import</span> <span class="n">bulk</span>
-<span class="linenos">3</span><span class="kn">from</span> <span class="nn">ase.units</span> <span class="kn">import</span> <span class="n">GPa</span>
-<span class="linenos">4</span><span class="kn">from</span> <span class="nn">ase.visualize</span> <span class="kn">import</span> <span class="n">view</span>
-<span class="linenos">5</span><span class="kn">from</span> <span class="nn">mattersim.forcefield.potential</span> <span class="kn">import</span> <span class="n">MatterSimCalculator</span>
-<span class="linenos">6</span><span class="kn">from</span> <span class="nn">mattersim.applications.phonon</span> <span class="kn">import</span> <span class="n">PhononWorkflow</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="linenos">2</span><span class="kn">from</span><span class="w"> </span><span class="nn">ase.build</span><span class="w"> </span><span class="kn">import</span> <span class="n">bulk</span>
+<span class="linenos">3</span><span class="kn">from</span><span class="w"> </span><span class="nn">ase.units</span><span class="w"> </span><span class="kn">import</span> <span class="n">GPa</span>
+<span class="linenos">4</span><span class="kn">from</span><span class="w"> </span><span class="nn">ase.visualize</span><span class="w"> </span><span class="kn">import</span> <span class="n">view</span>
+<span class="linenos">5</span><span class="kn">from</span><span class="w"> </span><span class="nn">mattersim.forcefield.potential</span><span class="w"> </span><span class="kn">import</span> <span class="n">MatterSimCalculator</span>
+<span class="linenos">6</span><span class="kn">from</span><span class="w"> </span><span class="nn">mattersim.applications.phonon</span><span class="w"> </span><span class="kn">import</span> <span class="n">PhononWorkflow</span>
 </pre></div>
 </div>
 </section>
@@ -406,6 +408,15 @@ and here is the phonon dispersion plot for the example above.</p>
         <p class="prev-next-subtitle">previous</p>
         <p class="prev-next-title"><span class="section-number">1. </span>Structure Optimization</p>
       </div>
+    </a>
+    <a class="right-next"
+       href="batch_relaxation_example.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title"><span class="section-number">3. </span>Batch Structure Optimization</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
     </a>
 </div>
                 </footer>

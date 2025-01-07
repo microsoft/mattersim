@@ -30,7 +30,7 @@
   <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 <link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=a3416100" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
   
@@ -154,6 +154,7 @@
 <li class="toctree-l1 current active has-children"><a class="reference internal" href="examples.html">Examples</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
 <li class="toctree-l2 current active"><a class="current reference internal" href="#">1. Structure Optimization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="phonon_example.html">2. Phonon Dispersion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batch_relaxation_example.html">3. Batch Structure Optimization</a></li>
 </ul>
 </details></li>
 </ul>
@@ -335,11 +336,11 @@
 <p>This is a simple example of how to perform a structure optimization using the MatterSim.</p>
 <section id="import-the-necessary-modules">
 <h2><span class="section-number">1.1. </span>Import the necessary modules<a class="headerlink" href="#import-the-necessary-modules" title="Link to this heading">#</a></h2>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="linenos">2</span><span class="kn">from</span> <span class="nn">ase.build</span> <span class="kn">import</span> <span class="n">bulk</span>
-<span class="linenos">3</span><span class="kn">from</span> <span class="nn">ase.units</span> <span class="kn">import</span> <span class="n">GPa</span>
-<span class="linenos">4</span><span class="kn">from</span> <span class="nn">mattersim.forcefield.potential</span> <span class="kn">import</span> <span class="n">MatterSimCalculator</span>
-<span class="linenos">5</span><span class="kn">from</span> <span class="nn">mattersim.applications.relax</span> <span class="kn">import</span> <span class="n">Relaxer</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="linenos">2</span><span class="kn">from</span><span class="w"> </span><span class="nn">ase.build</span><span class="w"> </span><span class="kn">import</span> <span class="n">bulk</span>
+<span class="linenos">3</span><span class="kn">from</span><span class="w"> </span><span class="nn">ase.units</span><span class="w"> </span><span class="kn">import</span> <span class="n">GPa</span>
+<span class="linenos">4</span><span class="kn">from</span><span class="w"> </span><span class="nn">mattersim.forcefield.potential</span><span class="w"> </span><span class="kn">import</span> <span class="n">MatterSimCalculator</span>
+<span class="linenos">5</span><span class="kn">from</span><span class="w"> </span><span class="nn">mattersim.applications.relax</span><span class="w"> </span><span class="kn">import</span> <span class="n">Relaxer</span>
 </pre></div>
 </div>
 </section>
