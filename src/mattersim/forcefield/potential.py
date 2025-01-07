@@ -483,7 +483,7 @@ class Potential(nn.Module):
         Return: results tuple
             - results[0] (list[float]): a list of energies
             - results[1] (list[np.ndarray]): a list of atomic forces
-            - results[2] (list[np.ndarray]): a list of stresses
+            - results[2] (list[np.ndarray]): a list of stresses (in GPa)
         """
         self.model.eval()
         energies = []
