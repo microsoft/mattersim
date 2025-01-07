@@ -77,4 +77,29 @@ mlflow.pyfunc.save_model(
     path=mlflow_pyfunc_model_path,
     python_model=MatterSimModelWrapper(),
     artifacts=artifacts,
+    conda_env={
+        "name": "mattersim-mlflow-env",
+        "channels": ["conda-forge"],
+        "dependencies": [
+            "python=3.9",
+            "pip<=24.2",
+            "git",
+            {
+                "pip": [
+                    "mlflow==2.19.0",
+                    "cloudpickle==3.1.0",
+                    "jaraco-collections==5.1.0",
+                    "jinja2==3.1.5",
+                    "matplotlib==3.9.4",
+                    "git+https://github.com/microsoft/mattersim.git",
+                    "numpy==1.26.4",
+                    "pandas==2.2.3",
+                    "phonopy==2.33.4",
+                    "platformdirs==4.2.0",
+                    "scipy==1.13.1",
+                    "torch==2.4.1",
+                ],
+            },
+        ],
+    },
 )
