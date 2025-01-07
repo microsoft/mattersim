@@ -45,6 +45,9 @@ Relax the structures
 Inspect the relaxed structures
 ------------------------------
 
+.. code-block:: python
+    :linenos:
+    
     # Extract the relaxed relaxed_structures
     relaxed_structures = [traj[-1] for traj in relaxation_trajectories]
 
