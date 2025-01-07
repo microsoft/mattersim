@@ -1,4 +1,4 @@
-Batch relaxation
+Batch Structure Optimization
 ================
 
 This is a simple example of how to use MatterSim to efficiently relax a list of structures.
