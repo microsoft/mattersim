@@ -48,9 +48,9 @@ def main(args):
 
     # Save the training, validation, and test datasets to xyz files
 
-    write(f"{save_dir}/train.xyz", atoms_train)
-    write(f"{save_dir}/valid.xyz", atoms_validation)
-    write(f"{save_dir}/test.xyz", atoms_test)
+    write(f"{save_dir}/train.xyz", atoms_train, format="extxyz")
+    write(f"{save_dir}/valid.xyz", atoms_validation, format="extxyz")
+    write(f"{save_dir}/test.xyz", atoms_test, format="extxyz")
 
 
 if __name__ == "__main__":

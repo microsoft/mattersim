@@ -141,7 +141,7 @@ def main(args):
         **args_dict,
     )
 
-    if local_rank == 0 and args.save_checkpoint:
+    if local_rank == 0 and args.save_checkpoint and args.wandb:
         wandb.save(os.path.join(args.save_path, "best_model.pth"))
 
 
