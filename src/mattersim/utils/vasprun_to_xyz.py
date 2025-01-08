@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import argparse
 import os
 import random
 
@@ -6,32 +7,25 @@ from ase.io import write
 
 from mattersim.utils.atoms_utils import AtomsAdaptor
 
-vasp_files = [
-    "work/data/H/vasp/vasprun.xml",
-    "work/data/H/vasp_2/vasprun.xml",
-    "work/data/H/vasp_3/vasprun.xml",
-    "work/data/H/vasp_4/vasprun.xml",
-    "work/data/H/vasp_5/vasprun.xml",
-    "work/data/H/vasp_6/vasprun.xml",
-    "work/data/H/vasp_7/vasprun.xml",
-    "work/data/H/vasp_8/vasprun.xml",
-    "work/data/H/vasp_9/vasprun.xml",
-    "work/data/H/vasp_10/vasprun.xml",
-]
-train_ratio = 0.8
-validation_ratio = 0.1
-test_ratio = 0.1
 
-save_dir = "./xyz_files"
-os.makedirs(save_dir, exist_ok=True)
+def main(args):
+    vasp_files = []
+    for root, dirs, files in os.walk(args.data_path):
+        for file in files:
+            if file.endswith(".xml"):
+                vasp_files.append(os.path.join(root, file))
 
+    train_ratio = args.train_ratio
+    validation_ratio = args.validation_ratio
 
-def main():
+    save_dir = args.save_path
+    os.makedirs(save_dir, exist_ok=True)
+
     atoms_train = []
     atoms_validation = []
     atoms_test = []
 
-    random.seed(42)
+    random.seed(args.seed)
 
     for vasp_file in vasp_files:
         atoms_list = AtomsAdaptor.from_file(filename=vasp_file)
@@ -60,4 +54,25 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # Some important arguments
+    parser = argparse.ArgumentParser()
+
+    # path parameters
+    parser.add_argument("--data_path", type=str, default=None, help="vasprun data path")
+    parser.add_argument("--train_ratio", type=float, default=0.8, help="train ratio")
+    parser.add_argument(
+        "--validation_ratio", type=float, default=0.1, help="validation ratio"
+    )
+    parser.add_argument(
+        "--save_path",
+        type=str,
+        default="./xyz_files",
+        help="path to save the xyz files",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=42,
+    )
+    args = parser.parse_args()
+    main(args)
