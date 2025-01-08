@@ -17,11 +17,14 @@ from mattersim.utils.atoms_utils import AtomsAdaptor
 from mattersim.utils.logger_utils import get_logger
 
 logger = get_logger()
-torch.distributed.init_process_group(backend="nccl")
 local_rank = int(os.environ["LOCAL_RANK"])
 
 
 def main(args):
+    if args.device == "cuda":
+        torch.distributed.init_process_group(backend="nccl")
+    else:
+        torch.distributed.init_process_group(backend="gloo")
     args_dict = vars(args)
     if args.wandb and local_rank == 0:
         wandb_api_key = (
@@ -48,7 +51,8 @@ def main(args):
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
 
-    torch.cuda.set_device(local_rank)
+    if args.device == "cuda":
+        torch.cuda.set_device(local_rank)
 
     if args.train_data_path.endswith(".pkl"):
         with open(args.train_data_path, "rb") as f:
@@ -72,12 +76,12 @@ def main(args):
         forces,
         stresses,
         shuffle=True,
-        pin_memory=True,
+        pin_memory=(args.device == "cuda"),
         is_distributed=True,
         **args_dict,
     )
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = args.device
     # build energy normalization module
     if args.re_normalize:
         scale = AtomScaling(
@@ -109,7 +113,7 @@ def main(args):
             energies,
             forces,
             stresses,
-            pin_memory=True,
+            pin_memory=(args.device == "cuda"),
             is_distributed=True,
             **args_dict,
         )
@@ -125,7 +129,8 @@ def main(args):
     if args.re_normalize:
         potential.model.set_normalizer(scale)
 
-    potential.model = torch.nn.parallel.DistributedDataParallel(potential.model)
+    if args.device == "cuda":
+        potential.model = torch.nn.parallel.DistributedDataParallel(potential.model)
     torch.distributed.barrier()
 
     potential.train_model(
