@@ -79,12 +79,12 @@ def phonon(
         has_imaginary, phonon = ph.run()
         phonon_results["has_imaginary"].append(has_imaginary)
         # phonon_results["phonon"].append(phonon)
-        phonon_results["phonon_band_plot"].append(
-            os.path.join(os.path.abspath(work_dir), f"{atoms.symbols}_phonon_band.png")
-        )
-        phonon_results["phonon_dos_plot"].append(
-            os.path.join(os.path.abspath(work_dir), f"{atoms.symbols}_phonon_dos.png")
-        )
+        # phonon_results["phonon_band_plot"].append(
+        #     os.path.join(os.path.abspath(work_dir), f"{atoms.symbols}_phonon_band.png")
+        # )
+        # phonon_results["phonon_dos_plot"].append(
+        #     os.path.join(os.path.abspath(work_dir), f"{atoms.symbols}_phonon_dos.png")
+        # )
         os.rename(
             os.path.join(os.path.abspath(work_dir), "band.yaml"),
             os.path.join(os.path.abspath(work_dir), f"{atoms.symbols}_band.yaml"),
