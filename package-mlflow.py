@@ -55,12 +55,12 @@ class MatterSimModelWrapper(mlflow.pyfunc.PythonModel):
             "singlepoint": self.singlepoint_wrapper,
         }
 
-        for _, row in data.iterrows():
-            try:
-                wrapper = wrappers[row.workflow]
-            except KeyError:
-                return dict(error="Invalid workflow selected")
+        try:
+            wrapper = wrappers[data.workflow.item()]
+        except KeyError:
+            return dict(error="Invalid workflow selected")
 
+        for _, row in data.iterrows():
             structure_data = row.structure_data
             atoms_list = ase_read(StringIO(structure_data), format="cif", index=":")
 
