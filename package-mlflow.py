@@ -70,6 +70,8 @@ class MatterSimModelWrapper(mlflow.pyfunc.PythonModel):
         for atoms in atoms_list:
             atoms.calc = calc
 
+        data["work_dir"] = "work_dir"
+
         return wrapper(atoms_list, **data)
 
 
