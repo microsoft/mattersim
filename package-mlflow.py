@@ -28,22 +28,22 @@ class MatterSimModelWrapper(mlflow.pyfunc.PythonModel):
 
         results = moldyn(atoms_list, **kwargs)
 
-        return { k: str(v) for k, v in results.items() }
+        return results
 
     def phonon_wrapper(self, atoms_list, **kwargs):
         results = phonon(atoms_list, **kwargs)
 
-        return { k: str(v) for k, v in results.items() }
+        return pd.DataFrame(results).to_json()
 
     def relax_wrapper(self, atoms_list, **kwargs):
         results = relax(atoms_list, **kwargs)
 
-        return { k: str(v) for k, v in results.items() }
+        return pd.DataFrame(results).to_json()
 
     def singlepoint_wrapper(self, atoms_list, **kwargs):
         results = singlepoint(atoms_list, **kwargs)
 
-        return { k: str(v) for k, v in results.items() }
+        return pd.DataFrame(results).to_json()
 
     def predict(self, context, model_input, params=None):
         data = model_input

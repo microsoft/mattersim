@@ -27,7 +27,7 @@ def singlepoint(
     for atoms in tqdm(
         atoms_list, total=len(atoms_list), desc="Predicting single point properties"
     ):
-        predicted_properties["structure"].append(AseAtomsAdaptor.get_structure(atoms))
+        predicted_properties["structure"].append(AseAtomsAdaptor.get_structure(atoms).as_dict())
         predicted_properties["energy"].append(atoms.get_potential_energy())
         predicted_properties["energy_per_atom"].append(
             atoms.get_potential_energy() / len(atoms)
