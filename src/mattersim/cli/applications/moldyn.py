@@ -109,6 +109,6 @@ def moldyn(
         # Save the DataFrame to a CSV file
         df.to_csv(os.path.join(work_dir, save_csv))
 
-        moldyn_results = df.to_dict()
+        moldyn_results = df
 
     return moldyn_results
