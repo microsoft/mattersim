@@ -60,9 +60,10 @@ class MatterSimModelWrapper(mlflow.pyfunc.PythonModel):
         except KeyError:
             return dict(error="Invalid workflow selected")
 
+        atoms_list = []
         for _, row in data.iterrows():
             structure_data = row.structure_data
-            atoms_list = ase_read(StringIO(structure_data), format="cif", index=":")
+            atoms_list.extend(ase_read(StringIO(structure_data), format="cif", index=":"))
 
         mattersim_model = "mattersim-v1.0.0-1m"
         calc = MatterSimCalculator(load_path=mattersim_model)
