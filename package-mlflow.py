@@ -33,17 +33,17 @@ class MatterSimModelWrapper(mlflow.pyfunc.PythonModel):
     def phonon_wrapper(self, atoms_list, **kwargs):
         results = phonon(atoms_list, **kwargs)
 
-        return pd.DataFrame(results).to_json()
+        return pd.DataFrame(results)
 
     def relax_wrapper(self, atoms_list, **kwargs):
         results = relax(atoms_list, **kwargs)
 
-        return pd.DataFrame(results).to_json()
+        return pd.DataFrame(results)
 
     def singlepoint_wrapper(self, atoms_list, **kwargs):
         results = singlepoint(atoms_list, **kwargs)
 
-        return pd.DataFrame(results).to_json()
+        return pd.DataFrame(results)
 
     def predict(self, context, model_input, params=None):
         data = model_input
