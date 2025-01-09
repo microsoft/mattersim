@@ -28,22 +28,22 @@ class MatterSimModelWrapper(mlflow.pyfunc.PythonModel):
 
         results = moldyn(atoms_list, **kwargs)
 
-        return json.dumps({ k: str(v) for k, v in results.items() })
+        return { k: str(v) for k, v in results.items() }
 
     def phonon_wrapper(self, atoms_list, **kwargs):
         results = phonon(atoms_list, **kwargs)
 
-        return json.dumps({ k: str(v) for k, v in results.items() })
+        return { k: str(v) for k, v in results.items() }
 
     def relax_wrapper(self, atoms_list, **kwargs):
         results = relax(atoms_list, **kwargs)
 
-        return json.dumps({ k: str(v) for k, v in results.items() })
+        return { k: str(v) for k, v in results.items() }
 
     def singlepoint_wrapper(self, atoms_list, **kwargs):
         results = singlepoint(atoms_list, **kwargs)
 
-        return json.dumps({ k: str(v) for k, v in results.items() })
+        return { k: str(v) for k, v in results.items() }
 
     def predict(self, context, model_input, params=None):
         data = model_input
@@ -59,7 +59,7 @@ class MatterSimModelWrapper(mlflow.pyfunc.PythonModel):
             try:
                 wrapper = wrappers[row.workflow]
             except KeyError:
-                return json.dumps(dict(error="Invalid workflow selected"))
+                return dict(error="Invalid workflow selected")
 
             structure_data = row.structure_data
             atoms_list = ase_read(StringIO(structure_data), format="cif", index=":")
