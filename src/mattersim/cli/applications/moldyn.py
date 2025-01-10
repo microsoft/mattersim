@@ -71,6 +71,12 @@ def moldyn(
         if not os.path.exists(work_dir):
             os.makedirs(work_dir)
 
+        if os.path.exists(os.path.join(work_dir, logfile)):
+            os.remove(os.path.join(work_dir, logfile))
+
+        if os.path.exists(os.path.join(work_dir, trajectory)):
+            os.remove(os.path.join(work_dir, trajectory))
+
         md = MolecularDynamics(
             atoms,
             ensemble=ensemble,
@@ -89,8 +95,6 @@ def moldyn(
         df = pd.read_csv(
             os.path.join(work_dir, logfile),
             sep="\\s+",
-            names=["time", "temperature", "energy", "pressure"],
-            skipfooter=1,
         )
         df.columns = list(
             map(lambda x: re.sub(r"\[.*?\]", "", x).strip().lower(), df.columns)
