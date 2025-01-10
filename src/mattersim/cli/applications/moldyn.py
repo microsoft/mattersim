@@ -28,6 +28,9 @@ def moldyn(
     save_csv: str = "results.csv.gz",
     **kwargs,
 ) -> dict:
+    if len(atoms_list) != 1:
+        raise ValueError("molecular dynamics workflow currently only supports one structure")
+
     moldyn_results = defaultdict(list)
 
     for atoms in atoms_list:
