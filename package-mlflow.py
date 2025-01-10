@@ -1,5 +1,6 @@
 import json
 from io import StringIO
+import base64
 
 import mlflow.pyfunc
 import pandas as pd
@@ -33,6 +34,13 @@ class MatterSimModelWrapper(mlflow.pyfunc.PythonModel):
     def phonon_wrapper(self, atoms_list, **kwargs):
         results = phonon(atoms_list, **kwargs)
 
+        # embed images
+        for key in ["phonon_band_plot", "phonon_dos_plot"]:
+            for i in range(len(results[key])):
+                results[key][i] = base64.b64encode(
+                    open(results[key][i], "rb").read()
+                ).decode("utf-8")
+
         return pd.DataFrame(results)
 
     def relax_wrapper(self, atoms_list, **kwargs):
@@ -46,7 +54,8 @@ class MatterSimModelWrapper(mlflow.pyfunc.PythonModel):
         return pd.DataFrame(results)
 
     def predict(self, context, model_input, params=None):
-        data = model_input
+        data = json.loads(model_input["data"].item())
+        # print(f"Inputs:\n{data}")
 
         wrappers = {
             "molecular_dynamics": self.moldyn_wrapper,
@@ -56,13 +65,12 @@ class MatterSimModelWrapper(mlflow.pyfunc.PythonModel):
         }
 
         try:
-            wrapper = wrappers[data.workflow.item()]
+            wrapper = wrappers[data["workflow"]]
         except KeyError:
             return dict(error="Invalid workflow selected")
 
         atoms_list = []
-        for _, row in data.iterrows():
-            structure_data = row.structure_data
+        for structure_data in data["structure_data"]:
             atoms_list.extend(ase_read(StringIO(structure_data), format="cif", index=":"))
 
         mattersim_model = "mattersim-v1.0.0-1m"
@@ -72,10 +80,13 @@ class MatterSimModelWrapper(mlflow.pyfunc.PythonModel):
 
         data["work_dir"] = "work_dir"
 
-        return wrapper(atoms_list, **data)
+        df = wrapper(atoms_list, **data)
+        output = json.loads(df.to_json(orient="records"))
+        # print(f"Output:\n{output}")
+        return output
 
 
-mlflow_pyfunc_model_path = "/home/biran/foundry/mlflow/mattersim_mlflow_pyfunc"
+mlflow_pyfunc_model_path = "./mattersim_mlflow_pyfunc"
 mlflow.pyfunc.save_model(
     path=mlflow_pyfunc_model_path,
     python_model=MatterSimModelWrapper(),
