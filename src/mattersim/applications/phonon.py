@@ -150,7 +150,7 @@ class PhononWorkflow(object):
         )
 
         # plot phonon spectrum
-        phonon.auto_band_structure(plot=True, write_yaml=True).savefig(
+        phonon.auto_band_structure(plot=True, write_yaml=True, with_eigenvectors=True).savefig(
             f"{str(atoms.symbols)}_phonon_band.png", dpi=300
         )
         phonon.auto_total_dos(plot=True, write_dat=True).savefig(
