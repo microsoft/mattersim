@@ -43,6 +43,7 @@ dependencies = [
     "pydantic>=2.9.2",
     "pymatgen",
     "seekpath",
+    "phonopy",
     "torch-ema>=0.3",
     "torch>=2.2.0,<2.5.0",
     "torch_geometric>=2.5.3",
@@ -50,6 +51,7 @@ dependencies = [
     "torchaudio>=2.2.0",
     "torchmetrics>=0.10.0",
     "torchvision>=0.17.0",
+    "wandb",
 ]
 
 [project.optional-dependencies]

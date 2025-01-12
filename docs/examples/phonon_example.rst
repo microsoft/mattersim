@@ -19,15 +19,6 @@ that we have a built-in workflow for phonon calculations using ``phonopy`` in Ma
     from mattersim.forcefield.potential import MatterSimCalculator
     from mattersim.applications.phonon import PhononWorkflow
 
-.. note ::
-    The ``phonopy`` package is required to compute the phonon dispersion.
-    You can install it by running the following command:
-
-    .. code-block:: console
-
-        conda install -c conda-forge phonopy==2.14.0
-
-
 Set up the MatterSim calculator
 -------------------------------
 
