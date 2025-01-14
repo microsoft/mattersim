@@ -119,6 +119,19 @@ To switch to the `5M` version, manually set the `load_path` of `MatterSimCalcula
 MatterSimCalculator(load_path="MatterSim-v1.0.0-5M.pth", device=device)
 ```
 
+## Finetune
+> [!TIP]
+> MatterSim provides a finetune script to finetune the pre-trained MatterSim model on a custom dataset.
+> Please refer to the [MatterSim documentation](https://microsoft.github.io/mattersim/) for more details.
+
+### A minimal finetune example
+
+```bash
+torchrun --nproc_per_node=1 src/mattersim/training/finetune_mattersim.py --load_model_path mattersim-v1.0.0-1m --train_data_path tests/data/high_level_water.xyz
+```
+
+
+
 
 ## Reference
 
