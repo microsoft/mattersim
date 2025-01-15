@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Examples &#8212; MatterSim 1.0.0 documentation</title>
+    <title>Finetune MatterSim &#8212; MatterSim 1.0.0 documentation</title>
   
   
   
@@ -47,11 +47,11 @@
     <script src="../_static/copybutton.js?v=f281be69"></script>
     <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'examples/examples';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/finetune';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="1. Structure Optimization" href="relax_example.html" />
-    <link rel="prev" title="Finetune MatterSim" href="../user_guide/finetune.html" />
+    <link rel="next" title="Examples" href="../examples/examples.html" />
+    <link rel="prev" title="Getting Started" href="getting_started.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -149,13 +149,13 @@
     <div class="bd-toc-item navbar-nav active">
         <p aria-level="2" class="caption" role="heading"><span class="caption-text">User Guide:</span></p>
 <ul class="current nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../user_guide/installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../user_guide/getting_started.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../user_guide/finetune.html">Finetune MatterSim</a></li>
-<li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">Examples</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l2"><a class="reference internal" href="relax_example.html">1. Structure Optimization</a></li>
-<li class="toctree-l2"><a class="reference internal" href="phonon_example.html">2. Phonon Dispersion</a></li>
-<li class="toctree-l2"><a class="reference internal" href="batch_relaxation_example.html">3. Batch Structure Optimization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Finetune MatterSim</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../examples/examples.html">Examples</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../examples/relax_example.html">1. Structure Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/phonon_example.html">2. Phonon Dispersion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/batch_relaxation_example.html">3. Batch Structure Optimization</a></li>
 </ul>
 </details></li>
 </ul>
@@ -232,7 +232,7 @@
       
       
       
-      <li><a href="../_sources/examples/examples.rst" target="_blank"
+      <li><a href="../_sources/user_guide/finetune.rst" target="_blank"
    class="btn btn-sm btn-download-source-button dropdown-item"
    title="Download source file"
    data-bs-placement="left" data-bs-toggle="tooltip"
@@ -295,7 +295,9 @@
 <button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
     <i class="fa-solid fa-magnifying-glass fa-lg"></i>
 </button>
-
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
 </div></div>
       
     </div>
@@ -306,11 +308,21 @@
               
 
 <div id="jb-print-docs-body" class="onlyprint">
-    <h1>Examples</h1>
+    <h1>Finetune MatterSim</h1>
     <!-- Table of contents -->
     <div id="print-main-content">
         <div id="jb-print-toc">
             
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#finetune-script">Finetune Script</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#finetune-parameters">Finetune Parameters</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#finetune-example">Finetune Example</a></li>
+</ul>
+            </nav>
         </div>
     </div>
 </div>
@@ -320,15 +332,59 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="examples">
-<h1>Examples<a class="headerlink" href="#examples" title="Link to this heading">#</a></h1>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="relax_example.html">1. Structure Optimization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="phonon_example.html">2. Phonon Dispersion</a></li>
-<li class="toctree-l1"><a class="reference internal" href="batch_relaxation_example.html">3. Batch Structure Optimization</a></li>
+  <section id="finetune-mattersim">
+<h1>Finetune MatterSim<a class="headerlink" href="#finetune-mattersim" title="Link to this heading">#</a></h1>
+<section id="finetune-script">
+<h2>Finetune Script<a class="headerlink" href="#finetune-script" title="Link to this heading">#</a></h2>
+<p>MatterSim provides a finetune script to
+finetune the pre-trained MatterSim model on a custom dataset.
+You can find the script in the <code class="docutils literal notranslate"><span class="pre">training</span></code> folder or in the
+<a class="reference external" href="https://github.com/microsoft/mattersim/blob/main/src/mattersim/training/finetune_mattersim.py">github link</a>.</p>
+</section>
+<section id="finetune-parameters">
+<h2>Finetune Parameters<a class="headerlink" href="#finetune-parameters" title="Link to this heading">#</a></h2>
+<p>The finetune script accepts several command-line arguments to customize the training process. Below is a list of the available parameters:</p>
+<ul class="simple">
+<li><p><strong>run_name</strong>: (str) The name of the run. Default is “example”.</p></li>
+<li><p><strong>train_data_path</strong>: (str) Path to the training data file. Supports various file types readable by ASE (e.g., <cite>.xyz</cite>, <cite>.traj</cite>, <cite>.cif</cite>) and <cite>.pkl</cite> files. Default is “./sample.xyz”.</p></li>
+<li><p><strong>valid_data_path</strong>: (str) Path to the validation data file. Default is None.</p></li>
+<li><p><strong>load_model_path</strong>: (str) Path to load the pre-trained model. Default is “mattersim-v1.0.0-1m”.</p></li>
+<li><p><strong>save_path</strong>: (str) Path to save the trained model. Default is “./results”.</p></li>
+<li><p><strong>save_checkpoint</strong>: (bool) Whether to save checkpoints during training. Default is False.</p></li>
+<li><p><strong>ckpt_interval</strong>: (int) Interval (in epochs) to save checkpoints. Default is 10.</p></li>
+<li><p><strong>device</strong>: (str) Device to use for training, either “cuda” or “cpu”. Default is “cuda”.</p></li>
+<li><p><strong>cutoff</strong>: (float) Cutoff radius for interactions. Default is 5.0.</p></li>
+<li><p><strong>threebody_cutoff</strong>: (float) Cutoff radius for three-body interactions, should be smaller than the two-body cutoff. Default is 4.0.</p></li>
+<li><p><strong>epochs</strong>: (int) Number of training epochs. Default is 1000.</p></li>
+<li><p><strong>batch_size</strong>: (int) Batch size for training. Default is 16.</p></li>
+<li><p><strong>lr</strong>: (float) Learning rate for the optimizer. Default is 2e-4.</p></li>
+<li><p><strong>step_size</strong>: (int) Step size for the learning rate scheduler. Default is 10.</p></li>
+<li><p><strong>include_forces</strong>: (bool) Whether to include forces in the training. Default is True.</p></li>
+<li><p><strong>include_stresses</strong>: (bool) Whether to include stresses in the training. Default is False.</p></li>
+<li><p><strong>force_loss_ratio</strong>: (float) Ratio of force loss in the total loss. Default is 1.0.</p></li>
+<li><p><strong>stress_loss_ratio</strong>: (float) Ratio of stress loss in the total loss. Default is 0.1.</p></li>
+<li><p><strong>early_stop_patience</strong>: (int) Patience for early stopping. Default is 10.</p></li>
+<li><p><strong>seed</strong>: (int) Random seed for reproducibility. Default is 42.</p></li>
+<li><p><strong>re_normalize</strong>: (bool) Whether to re-normalize energy and forces according to new data. Default is False.</p></li>
+<li><p><strong>scale_key</strong>: (str) Key for scaling forces. Only used when <code class="docutils literal notranslate"><span class="pre">re_normalize</span></code> is True. Default is “per_species_forces_rms”.</p></li>
+<li><p><strong>shift_key</strong>: (str) Key for shifting energy. Only used when <code class="docutils literal notranslate"><span class="pre">re_normalize</span></code> is True. Default is “per_species_energy_mean_linear_reg”.</p></li>
+<li><p><strong>init_scale</strong>: (float) Initial scale value. Only used when <code class="docutils literal notranslate"><span class="pre">re_normalize</span></code> is True. Default is None.</p></li>
+<li><p><strong>init_shift</strong>: (float) Initial shift value. Only used when <code class="docutils literal notranslate"><span class="pre">re_normalize</span></code> is True. Default is None.</p></li>
+<li><p><strong>trainable_scale</strong>: (bool) Whether the scale is trainable. Only used when <code class="docutils literal notranslate"><span class="pre">re_normalize</span></code> is True. Default is False.</p></li>
+<li><p><strong>trainable_shift</strong>: (bool) Whether the shift is trainable. Only used when <code class="docutils literal notranslate"><span class="pre">re_normalize</span></code> is True. Default is False.</p></li>
+<li><p><strong>wandb</strong>: (bool) Whether to use Weights &amp; Biases for logging. Default is False.</p></li>
+<li><p><strong>wandb_api_key</strong>: (str) API key for Weights &amp; Biases. Default is None.</p></li>
+<li><p><strong>wandb_project</strong>: (str) Project name for Weights &amp; Biases. Default is “wandb_test”.</p></li>
 </ul>
+<p>These parameters allow you to customize the finetuning process to suit your specific dataset and computational resources.</p>
+</section>
+<section id="finetune-example">
+<h2>Finetune Example<a class="headerlink" href="#finetune-example" title="Link to this heading">#</a></h2>
+<p>You can replace the data path with your own data path.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>torchrun<span class="w"> </span>--nproc_per_node<span class="o">=</span><span class="m">1</span><span class="w"> </span>src/mattersim/training/finetune_mattersim.py<span class="w"> </span>--load_model_path<span class="w"> </span>mattersim-v1.0.0-1m<span class="w"> </span>--train_data_path<span class="w"> </span>xyz_files/train.xyz<span class="w"> </span>--valid_data_path<span class="w"> </span>xyz_files/valid.xyz<span class="w"> </span>--batch_size<span class="w"> </span><span class="m">16</span><span class="w"> </span>--lr<span class="w"> </span>2e-4<span class="w"> </span>--step_size<span class="w"> </span><span class="m">20</span><span class="w"> </span>--epochs<span class="w"> </span><span class="m">200</span><span class="w"> </span>--save_path<span class="w"> </span>./finetune_result<span class="w"> </span>--save_checkpoint<span class="w"> </span>--ckpt_interval<span class="w"> </span><span class="m">20</span><span class="w"> </span>--include_stresses<span class="w"> </span>--include_forces
+</pre></div>
 </div>
+</section>
 </section>
 
 
@@ -343,20 +399,20 @@
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="../user_guide/finetune.html"
+       href="getting_started.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Finetune MatterSim</p>
+        <p class="prev-next-title">Getting Started</p>
       </div>
     </a>
     <a class="right-next"
-       href="relax_example.html"
+       href="../examples/examples.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title"><span class="section-number">1. </span>Structure Optimization</p>
+        <p class="prev-next-title">Examples</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -366,6 +422,24 @@
             </div>
             
             
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#finetune-script">Finetune Script</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#finetune-parameters">Finetune Parameters</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#finetune-example">Finetune Example</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
               
             
           </div>
