@@ -381,7 +381,19 @@ You can find the script in the <code class="docutils literal notranslate"><span 
 <section id="finetune-example">
 <h2>Finetune Example<a class="headerlink" href="#finetune-example" title="Link to this heading">#</a></h2>
 <p>You can replace the data path with your own data path.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>torchrun<span class="w"> </span>--nproc_per_node<span class="o">=</span><span class="m">1</span><span class="w"> </span>src/mattersim/training/finetune_mattersim.py<span class="w"> </span>--load_model_path<span class="w"> </span>mattersim-v1.0.0-1m<span class="w"> </span>--train_data_path<span class="w"> </span>xyz_files/train.xyz<span class="w"> </span>--valid_data_path<span class="w"> </span>xyz_files/valid.xyz<span class="w"> </span>--batch_size<span class="w"> </span><span class="m">16</span><span class="w"> </span>--lr<span class="w"> </span>2e-4<span class="w"> </span>--step_size<span class="w"> </span><span class="m">20</span><span class="w"> </span>--epochs<span class="w"> </span><span class="m">200</span><span class="w"> </span>--save_path<span class="w"> </span>./finetune_result<span class="w"> </span>--save_checkpoint<span class="w"> </span>--ckpt_interval<span class="w"> </span><span class="m">20</span><span class="w"> </span>--include_stresses<span class="w"> </span>--include_forces
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>torchrun<span class="w"> </span>--nproc_per_node<span class="o">=</span><span class="m">1</span><span class="w"> </span>src/mattersim/training/finetune_mattersim.py<span class="w"> </span><span class="se">\</span>
+<span class="w">                            </span>--load_model_path<span class="w"> </span>mattersim-v1.0.0-1m<span class="w"> </span><span class="se">\</span>
+<span class="w">                            </span>--train_data_path<span class="w"> </span>xyz_files/train.xyz<span class="w"> </span><span class="se">\</span>
+<span class="w">                            </span>--valid_data_path<span class="w"> </span>xyz_files/valid.xyz<span class="w"> </span><span class="se">\</span>
+<span class="w">                            </span>--batch_size<span class="w"> </span><span class="m">16</span><span class="w"> </span><span class="se">\</span>
+<span class="w">                            </span>--lr<span class="w"> </span>2e-4<span class="w"> </span><span class="se">\</span>
+<span class="w">                            </span>--step_size<span class="w"> </span><span class="m">20</span><span class="w"> </span><span class="se">\</span>
+<span class="w">                            </span>--epochs<span class="w"> </span><span class="m">200</span><span class="w"> </span><span class="se">\</span>
+<span class="w">                            </span>--save_path<span class="w"> </span>./finetune_result<span class="w"> </span><span class="se">\</span>
+<span class="w">                            </span>--save_checkpoint<span class="w"> </span><span class="se">\</span>
+<span class="w">                            </span>--ckpt_interval<span class="w"> </span><span class="m">20</span><span class="w"> </span><span class="se">\</span>
+<span class="w">                            </span>--include_stresses<span class="w"> </span><span class="se">\</span>
+<span class="w">                            </span>--include_forces
 </pre></div>
 </div>
 </section>
