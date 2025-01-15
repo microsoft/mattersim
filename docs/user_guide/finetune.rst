@@ -83,4 +83,16 @@ You can replace the data path with your own data path.
 
 .. code-block:: bash
 
-    torchrun --nproc_per_node=1 src/mattersim/training/finetune_mattersim.py --load_model_path mattersim-v1.0.0-1m --train_data_path xyz_files/train.xyz --valid_data_path xyz_files/valid.xyz --batch_size 16 --lr 2e-4 --step_size 20 --epochs 200 --save_path ./finetune_result --save_checkpoint --ckpt_interval 20 --include_stresses --include_forces
+    torchrun --nproc_per_node=1 src/mattersim/training/finetune_mattersim.py \
+                                --load_model_path mattersim-v1.0.0-1m \
+                                --train_data_path xyz_files/train.xyz \
+                                --valid_data_path xyz_files/valid.xyz \
+                                --batch_size 16 \
+                                --lr 2e-4 \
+                                --step_size 20 \ 
+                                --epochs 200 \ 
+                                --save_path ./finetune_result \ 
+                                --save_checkpoint \ 
+                                --ckpt_interval 20 \ 
+                                --include_stresses \ 
+                                --include_forces
