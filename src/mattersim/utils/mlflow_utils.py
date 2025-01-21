@@ -1,6 +1,6 @@
+import base64
 import json
 from io import StringIO
-import base64
 
 import mlflow.pyfunc
 import pandas as pd
