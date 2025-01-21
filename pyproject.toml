@@ -39,7 +39,6 @@ dependencies = [
     "mp-api",
     "numpy<2",
     "opt_einsum_fx",
-    "phonopy",
     "pydantic>=2.9.2",
     "pymatgen",
     "seekpath",
