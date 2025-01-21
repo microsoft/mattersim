@@ -105,7 +105,7 @@ mlflow.pyfunc.save_model(
                     "jaraco-collections==5.1.0",
                     "jinja2==3.1.5",
                     "matplotlib==3.9.4",
-                    "git+https://github.com/microsoft/mattersim.git@biran/hanyang/add-cli",
+                    "git+https://github.com/microsoft/mattersim.git",
                     "numpy==1.26.4",
                     "pandas==2.2.3",
                     "phonopy==2.33.4",
