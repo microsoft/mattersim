@@ -31,6 +31,7 @@ class PhononWorkflow(object):
         supercell_matrix: np.ndarray = None,
         qpoints_mesh: np.ndarray = None,
         max_atoms: int = None,
+        calc_spec: bool = True,
     ):
         """_summary
 
@@ -51,6 +52,8 @@ class PhononWorkflow(object):
             max_atoms (int, optional): Maximum atoms number limitation for the
                 supercell generation. If not set, will automatic generate super
                 -cell based on symmetry. Defaults to None.
+            calc_spec (bool, optional): If calculate the spectrum and check 
+                imaginary frequencies. Default to True.
         """
         assert (
             atoms.calc is not None
@@ -88,6 +91,7 @@ class PhononWorkflow(object):
             self.qpoints_mesh = qpoints_mesh
 
         self.max_atoms = max_atoms
+        self.calc_spec = calc_spec
 
     def compute_force_constants(self, atoms: Atoms, nrep_second: np.ndarray):
         """
@@ -209,14 +213,18 @@ class PhononWorkflow(object):
                 print("Error while computing force constants:", e)
                 raise
 
-            try:
-                # Calculate phonon spectrum
-                self.compute_phonon_spectrum_dos(self.atoms, phonon, k_point_mesh)
-                # check whether has imaginary frequency
-                has_imaginary = self.check_imaginary_freq(phonon)
-            except Exception as e:
-                print("Error while computing phonon spectrum and dos:", e)
-                raise
+            if self.calc_spec:
+                try:
+                    # Calculate phonon spectrum
+                    self.compute_phonon_spectrum_dos(self.atoms, phonon, k_point_mesh)
+                    # check whether has imaginary frequency
+                    has_imaginary = self.check_imaginary_freq(phonon)
+                except Exception as e:
+                    print("Error while computing phonon spectrum and dos:", e)
+                    raise
+            else:
+                has_imaginary = 'Not calculated, set calc_spec True'
+                phonon.save(settings={"force_constants": True})
 
         except Exception as e:
             print("An error occurred during the Phonon workflow:", e)
