@@ -212,15 +212,7 @@ class GraphConvertor:
                     f"size {x_len}x{y_len}x{z_len} Angstrom**3",
                     UserWarning,
                 )
-                y_len = (max_y - min_y) + max(self.twobody_cutoff, self.threebody_cutoff) * 2
-                z_len = (max_z - min_z) + max(self.twobody_cutoff, self.threebody_cutoff) * 2
-
-                lattice_matrix = np.array(
-                    [[x_len, 0.0, 0.0], [0.0, y_len, 0.0], [0.0, 0.0, z_len]],
-                    dtype=float,
-                )
-                pbc_ = np.array([1, 1, 1], dtype=int)
-                warnings.warn("No PBC detected, using a large supercell", UserWarning)
+               
                 atoms.set_cell(lattice_matrix)
                 atoms.set_pbc(pbc_)
             else:
