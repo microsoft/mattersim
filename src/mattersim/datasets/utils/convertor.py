@@ -194,7 +194,24 @@ class GraphConvertor:
                 max_x = np.max(atoms.positions[:, 0])
                 max_y = np.max(atoms.positions[:, 1])
                 max_z = np.max(atoms.positions[:, 2])      
-                x_len = (max_x - min_x) + max(self.twobody_cutoff, self.threebody_cutoff) * 2
+                x_len = (max_x - min_x) + max(
+                    self.twobody_cutoff, self.threebody_cutoff
+                ) * 5
+                y_len = (max_y - min_y) + max(
+                    self.twobody_cutoff, self.threebody_cutoff
+                ) * 5
+                z_len = (max_z - min_z) + max(
+                    self.twobody_cutoff, self.threebody_cutoff
+                ) * 5
+                max_len = max(x_len, y_len, z_len)
+                x_len = y_len = z_len = max_len
+                lattice_matrix = np.eye(3) * max_len
+                pbc_ = np.array([1, 1, 1], dtype=int)
+                warnings.warn(
+                    "No PBC detected, using a large supercell with "
+                    f"size {x_len}x{y_len}x{z_len} Angstrom**3",
+                    UserWarning,
+                )
                 y_len = (max_y - min_y) + max(self.twobody_cutoff, self.threebody_cutoff) * 2
                 z_len = (max_z - min_z) + max(self.twobody_cutoff, self.threebody_cutoff) * 2
 
