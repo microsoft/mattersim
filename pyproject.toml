@@ -44,7 +44,7 @@ dependencies = [
     "seekpath",
     "phonopy",
     "torch-ema>=0.3",
-    "torch>=2.2.0,<2.5.0",
+    "torch>=2.2.0",
     "torch_geometric>=2.5.3",
     "torch_runstats>=0.2.0",
     "torchaudio>=2.2.0",
