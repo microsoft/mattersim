@@ -49,6 +49,7 @@ class BatchRelaxer(object):
         filter: Union[type[Filter], str, None] = None,
         fmax: float = 0.05,
         max_natoms_per_batch: int = 512,
+        max_n_steps: int = 1_000_000,
     ):
         self.potential = potential
         self.device = potential.device
@@ -75,9 +76,10 @@ class BatchRelaxer(object):
         self.finished = False
         self.total_converged = 0
         self.trajectories: Dict[int, List[Atoms]] = {}
+        self.max_n_steps = max_n_steps 
 
     def insert(self, atoms: Atoms):
-        atoms.set_calculator(DummyBatchCalculator())
+        atoms.calc = DummyBatchCalculator()
         optimizer_instance = self.optimizer(
             self.filter(atoms) if self.filter else atoms
         )
@@ -119,7 +121,7 @@ class BatchRelaxer(object):
                     ]
 
                 opt.step()
-                if opt.converged():
+                if opt.converged() or opt.Nsteps >= self.max_n_steps:
                     self.is_active_instance[idx] = False
                     self.total_converged += 1
                     if self.total_converged % 100 == 0:
