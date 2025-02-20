@@ -268,6 +268,12 @@ def add_moldyn_args(parser: argparse.ArgumentParser):
         default="md.traj",
         help="Path to the trajectory file.",
     )
+    parser.add_argument(
+        "--taut",
+        type=float,
+        default=None,
+        help="Taut in femtoseconds. It is used for the Nose-Hoover thermostat.",
+    )
 
 
 def parse_atoms_list(
