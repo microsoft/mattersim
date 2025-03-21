@@ -84,6 +84,7 @@ class BatchRelaxer(object):
             self.filter(atoms) if self.filter else atoms
         )
         optimizer_instance.fmax = self.fmax
+        optimizer_instance.nsteps = 0
         self.optimizer_instances.append(optimizer_instance)
         self.is_active_instance.append(True)
 
@@ -121,7 +122,8 @@ class BatchRelaxer(object):
                     ]
 
                 opt.step()
-                if opt.converged() or opt.Nsteps >= self.max_n_steps:
+                opt.nsteps += 1
+                if opt.converged() or opt.nsteps >= self.max_n_steps:
                     self.is_active_instance[idx] = False
                     self.total_converged += 1
                     if self.total_converged % 100 == 0:
