@@ -1,5 +1,6 @@
 import base64
 import json
+import tempfile
 from io import StringIO
 
 import mlflow.pyfunc
@@ -78,7 +79,8 @@ class MatterSimModelWrapper(mlflow.pyfunc.PythonModel):
         for atoms in atoms_list:
             atoms.calc = calc
 
-        data["work_dir"] = "work_dir"
+        with tempfile.TemporaryDirectory() as td:
+            data["work_dir"] = td
 
         df = wrapper(atoms_list, **data)
         output = json.loads(df.to_json(orient="records"))
