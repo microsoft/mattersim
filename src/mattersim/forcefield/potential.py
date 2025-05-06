@@ -1280,7 +1280,7 @@ class MatterSimCalculator(Calculator):
         return cls(potential=potential, **kwargs)
 
     @deprecated(
-        version="1.0.0", reason="Plase use from_checkpoint or from_potential instead."
+        version="1.0.0", reason="Please use from_checkpoint or from_potential instead."
     )
     def load(
         load_path: str = None,

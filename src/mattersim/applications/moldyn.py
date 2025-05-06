@@ -34,7 +34,7 @@ class MolecularDynamics:
         Args:
             atoms (Union[Atoms, Structure]): ASE atoms object contains
                 structure information and calculator.
-            ensemble (str, optional): Simulation ensemble choosen. Defaults
+            ensemble (str, optional): Simulation ensemble chosen. Defaults
                 to nvt_nose_hoover'
             temperature (float, optional): Simulation temperature, in Kelvin.
                 Defaults to 300 K.
@@ -50,7 +50,7 @@ class MolecularDynamics:
             loginterval (int, optional): Only write a log line for every loginterval
                 time steps. Defaults to 10.
             append_trajectory (bool, optional): If False the trajectory file to be
-                overwriten each time the dynamics is restarted from scratch. If True,
+                overwritten each time the dynamics is restarted from scratch. If True,
                 the new structures are appended to the trajectory file instead.
 
         """
