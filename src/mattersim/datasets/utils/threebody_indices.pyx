@@ -5,7 +5,7 @@
 # cython: profile=True
 # cython: language_level=3
 # distutils: language = c
-# distutils: define_macros=NPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION
+# distutils: define_macros=NPY_NO_DEPRECATED_API=NPY_1_24_API_VERSION
 
 cimport numpy as np
 import numpy as np
