@@ -1,7 +1,7 @@
 [build-system]
 requires = [
     "Cython>=0.29.32",
-    "numpy>=2.0.0   ",
+    "numpy>=2.0.0",
     "setuptools>=45",
     "setuptools_scm",
     "wheel",
@@ -19,7 +19,7 @@ authors = [
     { name = "Ziheng Lu", email = "zihenglu@microsoft.com" },
 ]
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
@@ -37,7 +37,8 @@ dependencies = [
     "emmet-core<0.84; python_version < '3.10'",
     "loguru",
     "mp-api",
-    "numpy>=2.0.0",
+    "numpy>=2.0.0; python_version >= '3.10'",
+    "numpy<2.0.0; python_version < '3.10'",
     "opt_einsum_fx",
     "pydantic>=2.9.2",
     "pymatgen",
