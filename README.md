@@ -23,7 +23,7 @@ This README provides a quick start guide. For more comprehensive information, pl
 ## Installation
 
 ### Prerequisite
-* `Python >= 3.9`
+* `Python >= 3.10`
 
 
 ### Install from PyPI
@@ -32,7 +32,7 @@ This README provides a quick start guide. For more comprehensive information, pl
 >
 > ```bash
 > # create the environment
-> conda create -n mattersim python=3.9
+> conda create -n mattersim python=3.10
 >
 > # activate the environment
 > conda activate mattersim
