@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import pkg_resources
+from importlib.metadata import version
 
 # Get the version from setup.py
-__version__ = pkg_resources.get_distribution("mattersim").version
+__version__ = version("mattersim")
