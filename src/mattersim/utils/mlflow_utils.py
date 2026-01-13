@@ -1,5 +1,6 @@
 import base64
 import json
+import tempfile
 from io import StringIO
 
 import mlflow.pyfunc
@@ -78,10 +79,12 @@ class MatterSimModelWrapper(mlflow.pyfunc.PythonModel):
         for atoms in atoms_list:
             atoms.calc = calc
 
-        data["work_dir"] = "work_dir"
+        with tempfile.TemporaryDirectory() as td:
+            data["work_dir"] = td
 
-        df = wrapper(atoms_list, **data)
-        output = json.loads(df.to_json(orient="records"))
+            df = wrapper(atoms_list, **data)
+            output = json.loads(df.to_json(orient="records"))
+
         # print(f"Output:\n{output}")
         return output
 
@@ -105,7 +108,7 @@ mlflow.pyfunc.save_model(
                     "jaraco-collections==5.1.0",
                     "jinja2==3.1.5",
                     "matplotlib==3.9.4",
-                    "git+https://github.com/microsoft/mattersim.git",
+                    "git+https://github.com/microsoft/mattersim.git@e12460bdc007651716101635c817c33ae9cd81c9",
                     "numpy==1.26.4",
                     "pandas==2.2.3",
                     "phonopy==2.33.4",

@@ -9,7 +9,7 @@
 <h4 align="center">
 
 [![arXiv](https://img.shields.io/badge/arXiv-2405.04967-blue?logo=arxiv&logoColor=white.svg)](https://arxiv.org/abs/2405.04967)
-[![Requires Python 3.9+](https://img.shields.io/badge/Python-3.9+-blue.svg?logo=python&logoColor=white)](https://python.org/downloads)
+[![Requires Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg?logo=python&logoColor=white)](https://python.org/downloads)
 [![PyPI Downloads](https://static.pepy.tech/badge/mattersim)](https://pepy.tech/projects/mattersim)
 </h4>
 
@@ -23,7 +23,7 @@ This README provides a quick start guide. For more comprehensive information, pl
 ## Installation
 
 ### Prerequisite
-* `Python >= 3.9`
+* `Python >= 3.10`
 
 
 ### Install from PyPI
@@ -32,13 +32,12 @@ This README provides a quick start guide. For more comprehensive information, pl
 >
 > ```bash
 > # create the environment
-> conda create -n mattersim python=3.9
+> conda create -n mattersim python=3.10
 >
 > # activate the environment
 > conda activate mattersim
 > ```
 >
-> Although MatterSim can be installed with `Python > 3.9`, we recommend using `Python == 3.9` for optimal compatibility.
 
 To install MatterSim, use the following command. Please note that downloading the dependencies may take some time:
 ```bash

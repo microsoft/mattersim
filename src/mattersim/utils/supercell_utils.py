@@ -13,9 +13,9 @@ def auto_grid_detection(
 ):
     """
     This function automates the detection of grid for a given atomic structure
-    and max_atoms. If lattice vectors lenght in three direction is same or the
+    and max_atoms. If lattice vectors length in three direction is same or the
     difference is smaller than 0.1, the supercell vector element will has the
-    same value in three direction, the vaule is (max_atoms/atoms)^(1/3). Else
+    same value in three direction, the value is (max_atoms/atoms)^(1/3). Else
     the supercell vector element will be set proportionally to make the three
     supercell lattice vector length as same as possible.
 

@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.10', '3.11', '3.12', '3.13']
 
     steps:
     - name: Checkout repository
@@ -22,7 +22,7 @@ jobs:
 
     - name: Update environment.yaml with Python ${{ matrix.python-version }}
       run: |
-        sed -i.bak "s/- python=3.9/- python=${{ matrix.python-version }}/" environment.yaml
+        sed -i.bak "s/- python=3.10/- python=${{ matrix.python-version }}/" environment.yaml
         cat environment.yaml
 
     - name: Set up Micromamba
@@ -56,7 +56,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.10', '3.11', '3.12', '3.13']
 
     steps:
     - name: Checkout repository
@@ -64,7 +64,7 @@ jobs:
 
     - name: Update environment.yaml with Python ${{ matrix.python-version }}
       run: |
-        sed -i.bak "s/- python=3.9/- python=${{ matrix.python-version }}/" environment.yaml
+        sed -i.bak "s/- python=3.10/- python=${{ matrix.python-version }}/" environment.yaml
         cat environment.yaml
 
     - name: Restore build artifacts

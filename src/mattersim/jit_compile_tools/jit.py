@@ -82,7 +82,7 @@ def compile(
         n_trace_checks : int, default = 1
             How many random example inputs to generate when tracing a module.
             Must be at least one in order to have a tracing input.
-            Extra example inputs will be pased to ``torch.jit.trace``
+            Extra example inputs will be passed to ``torch.jit.trace``
             to confirm that the traced copmute graph doesn't change.
         script_options : dict, default = {}
             Extra kwargs for ``torch.jit.script``.

@@ -123,7 +123,7 @@ class Relaxer(object):
         """
         Args:
             atoms: (Union[Atoms, Iterable[Atoms]]):
-                The Atoms object or an iterable of Atoms objetcs to relax.
+                The Atoms object or an iterable of Atoms objects to relax.
             optimizer (Union[Optimizer, str]): The optimizer to use.
             filter (Union[Filter, str, None]): The filter to use.
             constrain_symmetry (bool): Whether to constrain the symmetry.

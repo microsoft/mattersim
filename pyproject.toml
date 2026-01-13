@@ -1,7 +1,7 @@
 [build-system]
 requires = [
     "Cython>=0.29.32",
-    "numpy<2",
+    "numpy>=2.0.0",
     "setuptools>=45",
     "setuptools_scm",
     "wheel",
@@ -19,7 +19,7 @@ authors = [
     { name = "Ziheng Lu", email = "zihenglu@microsoft.com" },
 ]
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
@@ -37,14 +37,15 @@ dependencies = [
     "emmet-core<0.84; python_version < '3.10'",
     "loguru",
     "mp-api",
-    "numpy<2",
+    "numpy>=2.0.0; python_version >= '3.10'",
+    "numpy<2.0.0; python_version < '3.10'",
     "opt_einsum_fx",
     "pydantic>=2.9.2",
     "pymatgen",
     "seekpath",
     "phonopy",
     "torch-ema>=0.3",
-    "torch>=2.2.0,<2.5.0",
+    "torch>=2.2.0",
     "torch_geometric>=2.5.3",
     "torch_runstats>=0.2.0",
     "torchaudio>=2.2.0",
@@ -90,9 +91,9 @@ version_scheme = "guess-next-dev"
 local_scheme = "dirty-tag"
 
 [tool.cibuildwheel]
-# Limit the build to Python 3.9
-build = "cp39-*"
-# Limit the build to manylinux
+# Limit the build to Python 3.10, 3.11, 3.12 and 3.13
+build = "cp3{10,11,12,13}-*"
+# Use manylinux2014 for Linux wheels
 manylinux-x86_64-image = "manylinux2014"
-# Include pure Python (none) wheels
-skip = "pp*,cp3{6,7,8,10,11}-*,*win*,*macos*"
+# Skip PyPy and all Windows/macOS builds
+skip = "pp*,*win*,*macos*"

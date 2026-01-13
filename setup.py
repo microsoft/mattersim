@@ -6,7 +6,8 @@ extensions = [
     Extension(
         "mattersim.datasets.utils.threebody_indices",
         ["src/mattersim/datasets/utils/threebody_indices.pyx"],
-        include_dirs=[np.get_include()]
+        include_dirs=[np.get_include()],
+        define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_24_API_VERSION")]
     )
 ]
 

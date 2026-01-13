@@ -97,7 +97,7 @@ def main(args):
             with open(args.valid_data_path, "rb") as f:
                 atoms_val = pkl.load(f)
         else:
-            atoms_val = AtomsAdaptor.from_file(filename=args.train_data_path)
+            atoms_val = AtomsAdaptor.from_file(filename=args.valid_data_path)
         energies = []
         forces = [] if args.include_forces else None
         stresses = [] if args.include_stresses else None

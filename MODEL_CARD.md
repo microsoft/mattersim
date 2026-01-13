@@ -47,7 +47,7 @@ The MatterSim model is intended for property predictions of materials.
 
 ### Direct Use
 
-The model is used for materials simulation and property prediciton tasks. An interface to atomic simulation environment is provided. Examples of direct usages include but not limited to
+The model is used for materials simulation and property prediction tasks. An interface to atomic simulation environment is provided. Examples of direct usages include but not limited to
 
 - Direct prediction of energy, forces and stress of a given materials
 - Phonon prediction using finite difference
@@ -170,4 +170,4 @@ We have evaluated the model on many examples, but there are many examples that a
 
 ### Recommendations
 
-For any appications related simulations of surfaces, interfaces, and systems with long-range interactions, the results are often qualitatively correct. For quantitative results, the model needs to be fine-tuned.
+For any applications related simulations of surfaces, interfaces, and systems with long-range interactions, the results are often qualitatively correct. For quantitative results, the model needs to be fine-tuned.
