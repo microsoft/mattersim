@@ -5,7 +5,7 @@ from typing import List, Union
 
 import pandas as pd
 from ase import Atoms
-from ase.constraints import Filter
+from ase.filters import Filter
 from ase.optimize.optimize import Optimizer
 from ase.units import GPa
 from loguru import logger
