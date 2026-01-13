@@ -3,8 +3,8 @@ import warnings
 from typing import Iterable, List, Tuple, Union
 
 from ase import Atoms
-from ase.constraints import Filter, FixSymmetry
-from ase.filters import ExpCellFilter, FrechetCellFilter
+from ase.constraints import FixSymmetry
+from ase.filters import ExpCellFilter, FrechetCellFilter, Filter
 from ase.optimize import BFGS, FIRE
 from ase.optimize.optimize import Optimizer
 from ase.units import GPa
