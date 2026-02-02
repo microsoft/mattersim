@@ -1,65 +1,52 @@
-# -*- coding: utf-8 -*-
-import time
-import warnings
+from typing import Literal
 
 import numpy as np
 import torch
 from ase import Atoms
 from torch_geometric.loader import DataLoader as DataLoader_pyg
+from tqdm import tqdm
 
-from mattersim.datasets.utils.convertor import GraphConvertor
+from mattersim.datasets.utils.converter import GraphConverter, BatchGraphConverter
 
 
 def build_dataloader(
-    atoms: list[Atoms] = None,
-    energies: list[float] = None,
-    forces: list[np.ndarray] = None,
-    stresses: list[np.ndarray] = None,
+    atoms: list[Atoms] | None = None,
+    energies: list[float] | None = None,
+    forces: list[np.ndarray] | None = None,
+    stresses: list[np.ndarray] | None = None,
     cutoff: float = 5.0,
     threebody_cutoff: float = 4.0,
     batch_size: int = 64,
-    model_type: str = "m3gnet",
-    shuffle=False,
+    model_type: Literal["m3gnet"] = "m3gnet",
+    shuffle: bool = False,
     only_inference: bool = False,
     num_workers: int = 0,
     pin_memory: bool = False,
-    multiprocessing: int = 0,
-    multithreading: int = 0,
-    dataset=None,
-    finetune_task_label: list = None,
-    **kwargs,
+    batch_converter: bool = True,
 ):
     """
     Build a dataloader given a list of atoms
-        - atoms : a list of atoms in ase format
-        - energies, forces and stresses are necessary for training
-            - energies : a list of energy (float) with unit eV
-            - forces : a list of nx3 force matrix (np.ndarray) with unit eV/Å,
-                where n is the number of atom in each structure.
-            - stresses : a list of 3x3 stress matrix (np.ndarray) with unit GPa
-        - only_inference : if True, energies, forces and stresses will be ignored
-        - num_workers : number of workers for dataloader
-        - pin_memory : if True, the datasets will be stored in GPU or CPU memory
-        - pin_memory_device : the device for pin_memory
-        - dataset : the dataset object for the dataloader
-                    only used for graphormer and geomformer
     """
 
-    convertor = GraphConvertor(model_type, cutoff, True, threebody_cutoff)
+    if not batch_converter:
+        converter = GraphConverter(model_type, cutoff, True, threebody_cutoff)
+    else:
+        converter = BatchGraphConverter(
+            model_type, 
+            twobody_cutoff=cutoff, 
+            has_threebody=True,
+            threebody_cutoff=threebody_cutoff
+        )
 
     preprocessed_data = []
 
-    if dataset is None:
-        if not only_inference:
-            assert (
-                energies is not None
-            ), "energies must be provided if only_inference is False"
-        if stresses is not None:
-            assert np.array(stresses[0]).shape == (
-                3,
-                3,
-            ), "stresses must be a list of 3x3 matrices"
+    # sanity checks
+    if not only_inference and np.any([x is None for x in [energies, forces, stresses]]):
+        raise ValueError(
+            "energies, forces, and stresses must be provided if only_inference is False"
+        )
 
+    if only_inference:
         length = len(atoms)
         if energies is None:
             energies = [None] * length
@@ -67,70 +54,49 @@ def build_dataloader(
             forces = [None] * length
         if stresses is None:
             stresses = [None] * length
+    else:
+        assert (
+            len(atoms) == len(energies) == len(forces) == len(stresses)
+        ), "Length of atoms, energies, forces, and stresses must be the same"
+    
 
     if model_type == "m3gnet":
-        if multiprocessing == 0 and multithreading == 0:
-            # start = time.time()
-            for graph, energy, force, stress in zip(atoms, energies, forces, stresses):
-                graph = convertor.convert(graph.copy(), energy, force, stress, **kwargs)
+        if not batch_converter:
+            for graph, energy, force, stress in zip(
+                atoms, energies, forces, stresses
+            ):
+                graph = converter.convert(
+                    graph.copy(), energy, force, stress
+                )
                 if graph is not None:
                     preprocessed_data.append(graph)
-            # print("Data preprocessing time: {:.2f} s".format(time.time() - start))
-        elif multithreading > 0 and multiprocessing == 0:
-            from multiprocessing.pool import ThreadPool
-
-            warnings.warn("multithreading is experimental")
-            warnings.warn("it may not be faster than single thread due to GIL.")
-            print("Using multithreading with {} threads".format(multithreading))
-            start = time.time()
-            pool = ThreadPool(processes=multithreading)
-            preprocessed_data = pool.starmap(
-                convertor.convert, zip(atoms, energies, forces, stresses)
-            )
-            pool.close()
-            print("Time elapsed: {:.2f} s".format(time.time() - start))
-        elif multiprocessing > 0 and multithreading == 0:
-            import multiprocessing as mp
-
-            warnings.warn("multiprocessing is experimental.")
-            print("Using multiprocessing with {} workers".format(multiprocessing))
-            # torch.multiprocessing.set_sharing_strategy('file_system')
-            start = time.time()
-            pool = mp.Pool(multiprocessing)
-            results = []
-            for i in range(multiprocessing):
-                left = int(i * length / multiprocessing)
-                right = int((i + 1) * length / multiprocessing)
-                results.append(
-                    pool.apply_async(multiprocess_data, args=(atoms[left:right], 1))
-                )
-            pool.close()
-            pool.join()
-            for result in results:
-                graph = result.get()
-                if graph is not None:
-                    preprocessed_data.extend(graph)
-            print("Time for multiprocessing: {:.2f} s".format(time.time() - start))
         else:
-            raise NotImplementedError
+            preprocessed_data = converter.convert(
+                atoms,
+                energy=energies,
+                forces=forces,
+                stresses=stresses,
+                max_natoms_per_batch=4096,
+            )
+    else:
+        raise NotImplementedError(f"model type not supported: {model_type}")
 
-        return DataLoader_pyg(
-            preprocessed_data,
-            batch_size=batch_size,
-            shuffle=shuffle,
-            num_workers=num_workers,
-            pin_memory=pin_memory,
-        )
 
-    elif model_type == "graphormer" or model_type == "geomformer":
-        raise NotImplementedError
+    return DataLoader_pyg(
+        preprocessed_data,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        num_workers=num_workers,
+        pin_memory=pin_memory,
+    )
+
 
 
 def multiprocess_data(atoms: list[Atoms], number):
-    convertor = GraphConvertor()
+    converter = GraphConverter()
     result = []
     for graph in atoms:
-        graph = convertor.convert(
+        graph = converter.convert(
             graph,
             graph.get_potential_energy(),
             graph.get_forces(),
