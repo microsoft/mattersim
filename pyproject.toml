@@ -45,12 +45,13 @@ dependencies = [
     "seekpath",
     "phonopy",
     "torch-ema>=0.3",
-    "torch>=2.2.0",
+    "torch>=2.6.0,<=2.8.0",
     "torch_geometric>=2.5.3",
     "torch_runstats>=0.2.0",
     "torchaudio>=2.2.0",
     "torchmetrics>=0.10.0",
     "torchvision>=0.17.0",
+    "torch-scatter",
     "wandb",
 ]
 
