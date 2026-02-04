@@ -2360,7 +2360,7 @@ docs = [
 
 [package.metadata]
 requires-dist = [
-    { name = "ase", specifier = ">=3.23.0" },
+    { name = "ase", specifier = ">=3.27.0" },
     { name = "atomate2" },
     { name = "azure-identity" },
     { name = "azure-storage-blob" },

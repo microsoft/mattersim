@@ -26,7 +26,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 dependencies = [
-    "ase>=3.23.0",
+    "ase>=3.27.0",
     "azure-identity",
     "azure-storage-blob",
     "scikit-learn",

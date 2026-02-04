@@ -4,8 +4,7 @@ from typing import Dict, List, Union
 
 from ase import Atoms, units
 from ase.calculators.calculator import Calculator
-from ase.constraints import Filter
-from ase.filters import ExpCellFilter, FrechetCellFilter
+from ase.filters import ExpCellFilter, Filter, FrechetCellFilter
 from ase.optimize import BFGS, FIRE
 from ase.optimize.optimize import Optimizer
 from loguru import logger
