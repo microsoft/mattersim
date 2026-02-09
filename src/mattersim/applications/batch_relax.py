@@ -4,8 +4,7 @@ from typing import Dict, List, Union
 
 from ase import Atoms, units
 from ase.calculators.calculator import Calculator
-from ase.constraints import Filter
-from ase.filters import ExpCellFilter, FrechetCellFilter
+from ase.filters import ExpCellFilter, FrechetCellFilter, Filter
 from ase.optimize import BFGS, FIRE
 from ase.optimize.optimize import Optimizer
 from loguru import logger
@@ -123,7 +122,10 @@ class BatchRelaxer(object):
 
                 opt.step()
                 opt.nsteps += 1
-                if opt.converged() or opt.nsteps >= self.max_n_steps:
+                # Get gradient for convergence check
+                # Note: gradient = -forces for the optimizable object
+                gradient = opt.optimizable.get_gradient()
+                if opt.converged(gradient) or opt.nsteps >= self.max_n_steps:
                     self.is_active_instance[idx] = False
                     self.total_converged += 1
                     if self.total_converged % 100 == 0:
