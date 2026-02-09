@@ -23,9 +23,28 @@ def build_dataloader(
     num_workers: int = 0,
     pin_memory: bool = False,
     batch_converter: bool = True,
+    max_natoms_per_batch: int = 4096,
 ):
     """
     Build a dataloader given a list of atoms
+
+    Args:
+        atoms: list of Atoms objects
+        energies: list of energies corresponding to the atoms
+        forces: list of forces corresponding to the atoms
+        stresses: list of stresses corresponding to the atoms
+        cutoff: cutoff distance for graph construction
+        threebody_cutoff: cutoff distance for three-body interactions
+        batch_size: number of samples per batch
+        model_type: type of model to use
+        shuffle: whether to shuffle the data
+        only_inference: whether to only perform inference
+        num_workers: number of worker processes for data loading
+        pin_memory: whether to pin memory
+        batch_converter: whether to use batch converter
+        max_natoms_per_batch: maximum number of atoms per batch in the batch converter, only used if batch_converter is True
+            Do not confuse with batch_size, which is the number of samples per batch in the final dataloader.
+            But, max_natoms_per_batch is used to control the number of atoms to construct the graph.
     """
 
     if not batch_converter:
@@ -76,7 +95,7 @@ def build_dataloader(
                 energy=energies,
                 forces=forces,
                 stresses=stresses,
-                max_natoms_per_batch=4096,
+                max_natoms_per_batch=max_natoms_per_batch,
             )
     else:
         raise NotImplementedError(f"model type not supported: {model_type}")
