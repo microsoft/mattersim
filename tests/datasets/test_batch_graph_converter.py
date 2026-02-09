@@ -56,7 +56,6 @@ class TestBatchGraphConverterInit:
         assert converter.twobody_cutoff == 5.0
         assert converter.threebody_cutoff == 4.0
         assert converter.has_threebody is True
-        assert converter.max_num_neighbors_threshold == int(1e6)
 
     def test_custom_cutoffs(self):
         """Test initialization with custom cutoff values."""
@@ -87,11 +86,6 @@ class TestBatchGraphConverterInit:
         """Test that unsupported model types raise NotImplementedError."""
         with pytest.raises(NotImplementedError):
             BatchGraphConverter(model_type="unsupported")
-
-    def test_max_num_neighbors_threshold(self):
-        """Test custom max_num_neighbors_threshold."""
-        converter = BatchGraphConverter(max_num_neighbors_threshold=500)
-        assert converter.max_num_neighbors_threshold == 500
 
 
 # =============================================================================

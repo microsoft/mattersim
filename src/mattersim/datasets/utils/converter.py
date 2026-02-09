@@ -380,14 +380,12 @@ class BatchGraphConverter:
         twobody_cutoff: float = 5.0,
         has_threebody: bool = True,
         threebody_cutoff: float = 4.0,
-        max_num_neighbors_threshold: int = int(1e6),
         device: str | torch.device | None = None,
     ):
         self.model_type = model_type
         self.twobody_cutoff = twobody_cutoff
         self.threebody_cutoff = threebody_cutoff
         self.has_threebody = has_threebody
-        self.max_num_neighbors_threshold = max_num_neighbors_threshold
         if device is None:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         elif isinstance(device, str):
@@ -544,7 +542,6 @@ class BatchGraphConverter:
                 cell=cell,
                 natoms=natoms,
                 radius=self.twobody_cutoff,
-                max_num_neighbors_threshold=self.max_num_neighbors_threshold,
             )
             edge_indices = torch.cat(
                 (edge_indices[1].unsqueeze(0), edge_indices[0].unsqueeze(0)), dim=0

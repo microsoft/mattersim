@@ -1,11 +1,5 @@
 """
-Code derived from the OCP codebase:
-https://github.com/Open-Catalyst-Project/ocp
-
-Copyright (c) Facebook, Inc. and its affiliates.
-
-This source code is licensed under the MIT license found in
-https://github.com/Open-Catalyst-Project/ocp/blob/main/LICENSE.md.
+Code modified from the OCP codebase: https://github.com/Open-Catalyst-Project/ocp
 """
 
 import sys
@@ -21,7 +15,6 @@ def radius_graph_pbc(
     natoms: torch.Tensor,
     cell: torch.Tensor,
     radius: float,
-    max_num_neighbors_threshold: int,
     max_cell_images_per_dim: int = sys.maxsize,
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """Function computing the graph in periodic boundary conditions on a (batched) set of
@@ -41,7 +34,6 @@ def radius_graph_pbc(
         cell (Tensor): atomic cell. Has shape
             :obj:`[n_structures, 3, 3]`
         radius (float): cutoff radius distance
-        max_num_neighbors_threshold (int): Maximum number of neighbours to consider.
 
     Returns:
         edge_index (IntTensor): index of atoms in edges. Has shape
@@ -194,22 +186,13 @@ def radius_graph_pbc(
     cell_offsets = cell_offsets.view(-1, 3)
     atom_distance_squared = torch.masked_select(atom_distance_squared, mask)
 
-    mask_num_neighbors, num_neighbors_image = get_max_neighbors_mask(
-        natoms=natoms,
-        index=index1,
-        atom_distance_squared=atom_distance_squared,
-        max_num_neighbors_threshold=max_num_neighbors_threshold,
-    )
-
-    if not torch.all(mask_num_neighbors):
-        # Mask out the atoms to ensure each atom has at most max_num_neighbors_threshold neighbors
-        index1 = torch.masked_select(index1, mask_num_neighbors)
-        index2 = torch.masked_select(index2, mask_num_neighbors)
-        atom_distance_squared = torch.masked_select(atom_distance_squared, mask_num_neighbors)
-        cell_offsets = torch.masked_select(
-            cell_offsets.view(-1, 3), mask_num_neighbors.view(-1, 1).expand(-1, 3)
-        )
-        cell_offsets = cell_offsets.view(-1, 3)
+    # Compute num_neighbors_image (number of edges per structure in the batch)
+    num_atoms = natoms.sum()
+    ones = index1.new_ones(1).expand_as(index1)
+    num_neighbors = segment_coo(ones, index1, dim_size=num_atoms)
+    image_indptr = torch.zeros(natoms.shape[0] + 1, device=device, dtype=torch.long)
+    image_indptr[1:] = torch.cumsum(natoms, dim=0)
+    num_neighbors_image = segment_csr(num_neighbors, image_indptr)
 
     edge_index = torch.stack((index2, index1))
     # shifts = -torch.matmul(unit_cell, data.cell).view(-1, 3)
@@ -224,74 +207,3 @@ def radius_graph_pbc(
         torch.sqrt(atom_distance_squared),
     )
 
-
-def get_max_neighbors_mask(
-    natoms: torch.Tensor,
-    index: torch.Tensor,
-    atom_distance_squared: torch.Tensor,
-    max_num_neighbors_threshold: int,
-) -> tuple[torch.Tensor, torch.Tensor]:
-    """
-    Give a mask that filters out edges so that each atom has at most
-    `max_num_neighbors_threshold` neighbors.
-    Assumes that `index` is sorted.
-    """
-    device = natoms.device
-    num_atoms = natoms.sum()
-
-    # Get number of neighbors
-    # segment_coo assumes sorted index
-    ones = index.new_ones(1).expand_as(index)
-    num_neighbors = segment_coo(ones, index, dim_size=num_atoms)
-    max_num_neighbors = num_neighbors.max()
-    num_neighbors_thresholded = num_neighbors.clamp(max=max_num_neighbors_threshold)
-
-    # Get number of (thresholded) neighbors per image
-    image_indptr = torch.zeros(natoms.shape[0] + 1, device=device, dtype=torch.long)
-    image_indptr[1:] = torch.cumsum(natoms, dim=0)
-    num_neighbors_image = segment_csr(num_neighbors_thresholded, image_indptr)
-
-    # If max_num_neighbors is below the threshold, return early
-    if max_num_neighbors <= max_num_neighbors_threshold or max_num_neighbors_threshold <= 0:
-        mask_num_neighbors = torch.tensor([True], dtype=torch.bool, device=device).expand_as(index)
-        return mask_num_neighbors, num_neighbors_image
-
-    # Create a tensor of size [num_atoms, max_num_neighbors] to sort the distances of the neighbors.
-    # Fill with infinity so we can easily remove unused distances later.
-    distance_sort = torch.full(
-        [int((num_atoms * max_num_neighbors).long().item())], np.inf, device=device
-    )
-
-    # Create an index map to map distances from atom_distance to distance_sort
-    # index_sort_map assumes index to be sorted
-    index_neighbor_offset = torch.cumsum(num_neighbors, dim=0) - num_neighbors
-    index_neighbor_offset_expand = torch.repeat_interleave(index_neighbor_offset, num_neighbors)
-    index_sort_map = (
-        index * max_num_neighbors
-        + torch.arange(len(index), device=device)
-        - index_neighbor_offset_expand
-    )
-    distance_sort.index_copy_(0, index_sort_map, atom_distance_squared)
-    distance_sort = distance_sort.view(num_atoms, max_num_neighbors)
-
-    # Sort neighboring atoms based on distance
-    distance_sort, index_sort = torch.sort(distance_sort, dim=1)
-    # Select the max_num_neighbors_threshold neighbors that are closest
-    distance_sort = distance_sort[:, :max_num_neighbors_threshold]
-    index_sort = index_sort[:, :max_num_neighbors_threshold]
-
-    # Offset index_sort so that it indexes into index
-    index_sort = index_sort + index_neighbor_offset.view(-1, 1).expand(
-        -1, max_num_neighbors_threshold
-    )
-    # Remove "unused pairs" with infinite distances
-    mask_finite = torch.isfinite(distance_sort)
-    index_sort = torch.masked_select(index_sort, mask_finite)
-
-    # At this point index_sort contains the index into index of the
-    # closest max_num_neighbors_threshold neighbors per atom
-    # Create a mask to remove all pairs not in index_sort
-    mask_num_neighbors = torch.zeros(len(index), device=device, dtype=torch.bool)
-    mask_num_neighbors.index_fill_(0, index_sort, torch.tensor(True))
-
-    return mask_num_neighbors, num_neighbors_image
