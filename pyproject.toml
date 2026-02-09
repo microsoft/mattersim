@@ -26,7 +26,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 dependencies = [
-    "ase>=3.23.0",
+    "ase>=3.27.0",
     "azure-identity",
     "azure-storage-blob",
     "scikit-learn",
@@ -45,12 +45,13 @@ dependencies = [
     "seekpath",
     "phonopy",
     "torch-ema>=0.3",
-    "torch>=2.2.0",
+    "torch>=2.6.0,<=2.8.0",
     "torch_geometric>=2.5.3",
     "torch_runstats>=0.2.0",
     "torchaudio>=2.2.0",
     "torchmetrics>=0.10.0",
     "torchvision>=0.17.0",
+    "torch-scatter",
     "wandb",
 ]
 
@@ -97,3 +98,21 @@ build = "cp3{10,11,12,13}-*"
 manylinux-x86_64-image = "manylinux2014"
 # Skip PyPy and all Windows/macOS builds
 skip = "pp*,*win*,*macos*"
+
+[[tool.uv.index]]
+name = "pyg-cpu"
+url = "https://data.pyg.org/whl/torch-2.8.0+cpu.html"
+format = "flat"
+explicit = true
+
+[[tool.uv.index]]
+name = "pyg-cu128"
+url = "https://data.pyg.org/whl/torch-2.8.0+cu128.html"
+format = "flat"
+explicit = true
+
+[tool.uv.sources]
+torch-scatter = [
+    { index = "pyg-cu128", marker = "sys_platform == 'linux'" },
+    { index = "pyg-cpu", marker = "sys_platform != 'linux'" },
+]
