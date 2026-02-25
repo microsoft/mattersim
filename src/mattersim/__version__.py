@@ -1,5 +1,6 @@
-# -*- coding: utf-8 -*-
-import pkg_resources
+from importlib.metadata import version, PackageNotFoundError
 
-# Get the version from setup.py
-__version__ = pkg_resources.get_distribution("mattersim").version
+try:
+    __version__ = version("mattersim")
+except PackageNotFoundError:
+    __version__ = "unknown"
