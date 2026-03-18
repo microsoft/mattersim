@@ -15,7 +15,7 @@ import torch.distributed
 import torch.nn as nn
 from ase import Atoms
 from ase.calculators.calculator import Calculator
-from ase.constraints import full_3x3_to_voigt_6_stress
+from ase.stress import full_3x3_to_voigt_6_stress
 from ase.units import GPa
 from deprecated import deprecated
 from torch.optim import Adam
