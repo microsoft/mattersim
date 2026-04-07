@@ -88,11 +88,19 @@ class M3Gnet(nn.Module):
         num_graphs = input["num_graphs"]
         batch = input["batch"]
 
-        # Use precomputed values to avoid device-to-host sync on MPS
-        total_num_atoms = input["total_num_atoms"]
-        total_num_bonds = input["total_num_bonds"]
-        bond_index_bias = input["bond_index_bias"]
-        three_body_edge_map = input["three_body_edge_map"]
+        # Use precomputed values if available, otherwise compute on the fly
+        # (backward-compat for callers not using batch_to_dict)
+        total_num_atoms = input.get("total_num_atoms", int(num_atoms.sum()))
+        total_num_bonds = input.get("total_num_bonds", int(num_bonds.sum()))
+
+        bond_index_bias = input.get("bond_index_bias", None)
+        if bond_index_bias is None:
+            cumsum = torch.cumsum(num_bonds, dim=0) - num_bonds
+            bond_index_bias = torch.repeat_interleave(
+                cumsum, input["num_three_body"], dim=0
+            ).unsqueeze(-1)
+
+        three_body_edge_map = input.get("three_body_edge_map", None)
 
         # -------------------------------------------------------------#
         three_body_indices = three_body_indices + bond_index_bias
