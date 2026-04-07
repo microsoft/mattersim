@@ -54,6 +54,7 @@ def _make_test_atoms():
 
 
 def test_default_batch_relaxer(device):
+    print(f"\n>>> Running test_default_batch_relaxer on device: {device}")
     potential = Potential.from_checkpoint(device=device)
     atoms_ideal, atoms_displaced, atoms_expanded = _make_test_atoms()
     atoms_batch = [atoms_ideal, atoms_displaced, atoms_expanded]
