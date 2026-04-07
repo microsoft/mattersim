@@ -1123,7 +1123,7 @@ def batch_to_dict(graph_batch, model_type="m3gnet", device=None):
         # Edge-to-three-body map for scatter in ThreeDInteraction
         # (replaces repeat_interleave(arange, num_triple_ij) in message_passing.py)
         total_bonds = input["total_num_bonds"]
-        index_map = torch.arange(total_bonds, device=num_triple_ij.device)
+        index_map = torch.arange(total_bonds)
         input["three_body_edge_map"] = torch.repeat_interleave(
             index_map, num_triple_ij.view(-1)
         )
