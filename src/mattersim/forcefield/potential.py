@@ -493,8 +493,7 @@ class Potential(nn.Module):
             if self.model_name == "graphormer" or self.model_name == "geomformer":
                 raise NotImplementedError
             else:
-                input = batch_to_dict(graph_batch)
-                input = move_to_device(input, self.device)
+                input = batch_to_dict(graph_batch, device=self.device)
             result = self.forward(
                 input,
                 include_forces=include_forces,
@@ -552,8 +551,7 @@ class Potential(nn.Module):
             if self.model_name == "graphormer" or self.model_name == "geomformer":
                 raise NotImplementedError
             else:
-                input = batch_to_dict(graph_batch)
-                input = move_to_device(input, self.device)
+                input = batch_to_dict(graph_batch, device=self.device)
             if mode == "train":
                 result = self.forward(
                     input,
@@ -706,8 +704,7 @@ class Potential(nn.Module):
         if self.model_name == "graphormer" or self.model_name == "geomformer":
             raise NotImplementedError
         else:
-            input = batch_to_dict(graph_batch)
-            input = move_to_device(input, self.device)
+            input = batch_to_dict(graph_batch, device=self.device)
         result = self.forward(
             input,
             include_forces=include_forces,
@@ -1071,7 +1068,15 @@ class Potential(nn.Module):
         return self.description
 
 
-def batch_to_dict(graph_batch, model_type="m3gnet", device="cuda"):
+def batch_to_dict(graph_batch, model_type="m3gnet", device=None):
+    """Convert a PyG graph batch to an input dictionary for the model.
+
+    Args:
+        graph_batch: a PyG Batch object from the dataloader.
+        model_type: the model type (currently only "m3gnet" is supported).
+        device: target device for all tensors. If None, tensors stay on their
+            original device.
+    """
     if model_type == "m3gnet":
         # TODO: key_list
         atom_pos = graph_batch.atom_pos
@@ -1128,18 +1133,14 @@ def batch_to_dict(graph_batch, model_type="m3gnet", device="cuda"):
     else:
         raise NotImplementedError
 
+    # Move all tensors to the target device
+    if device is not None:
+        input = {
+            k: v.to(device) if isinstance(v, torch.Tensor) else v
+            for k, v in input.items()
+        }
+
     return input
-
-
-def move_to_device(input_dict, device):
-    """Move all tensors in an input dict to the specified device.
-
-    Non-tensor values (Python ints, etc.) are kept as-is.
-    """
-    return {
-        k: v.to(device) if isinstance(v, torch.Tensor) else v
-        for k, v in input_dict.items()
-    }
 
 
 @deprecated(version="1.0.0", reason="Please use MatterSimCalculator instead.")
@@ -1241,8 +1242,7 @@ class DeepCalculator(Calculator):
             ):
                 raise NotImplementedError
             else:
-                input = batch_to_dict(graph_batch)
-                input = move_to_device(input, self.device)
+                input = batch_to_dict(graph_batch, device=self.device)
 
             result = self.potential.forward(
                 input, include_forces=True, include_stresses=self.compute_stress
@@ -1399,8 +1399,7 @@ class MatterSimCalculator(Calculator):
             ):
                 raise NotImplementedError
             else:
-                input = batch_to_dict(graph_batch)
-                input = move_to_device(input, self.device)
+                input = batch_to_dict(graph_batch, device=self.device)
 
             result = self.potential.forward(
                 input, include_forces=True, include_stresses=self.compute_stress
