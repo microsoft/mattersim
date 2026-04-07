@@ -60,6 +60,8 @@ class ThreeDInteraction(nn.Module):
         edge_length,
         num_edges,
         num_triple_ij,
+        total_num_bonds: int = -1,
+        three_body_edge_map: torch.Tensor = None,
     ):
         atom_mask = (
             self.atom_mlp(atom_attr)[edge_index[0][three_body_index[:, 1]]]
@@ -71,18 +73,27 @@ class ThreeDInteraction(nn.Module):
             )
         )
         three_basis = three_basis * atom_mask
-        index_map = torch.arange(torch.sum(num_edges).item()).to(
-            edge_length.device
-        )  # noqa: E501
-        index_map = torch.repeat_interleave(index_map, num_triple_ij).to(
-            edge_length.device
-        )
+
+        # Use precomputed edge map if available (avoids MPS sync)
+        if three_body_edge_map is not None:
+            index_map = three_body_edge_map
+        else:
+            index_map = torch.arange(torch.sum(num_edges).item()).to(
+                edge_length.device
+            )
+            index_map = torch.repeat_interleave(index_map, num_triple_ij).to(
+                edge_length.device
+            )
+
+        if total_num_bonds < 0:
+            total_num_bonds = torch.sum(num_edges).item()
+
         e_ij_tuda = scatter(
             three_basis,
             index_map,
             dim=0,
             reduce="sum",
-            dim_size=torch.sum(num_edges).item(),
+            dim_size=total_num_bonds,
         )
         edge_attr_prime = edge_attr + self.edge_gate_mlp(e_ij_tuda)
         return edge_attr_prime
@@ -216,7 +227,13 @@ class MainBlock(nn.Module):
         num_edges,
         num_triple_ij,
         num_atoms,
+        total_num_atoms: int = -1,
+        total_num_bonds: int = -1,
+        three_body_edge_map: torch.Tensor = None,
     ):
+        if total_num_atoms < 0:
+            total_num_atoms = torch.sum(num_atoms).item()
+
         # threebody interaction
         edge_attr = self.three_body(
             edge_attr,
@@ -227,6 +244,8 @@ class MainBlock(nn.Module):
             edge_length,
             num_edges,
             num_triple_ij.view(-1),
+            total_num_bonds=total_num_bonds,
+            three_body_edge_map=three_body_edge_map,
         )
 
         # update bond feature
@@ -252,7 +271,7 @@ class MainBlock(nn.Module):
             atom_attr_prime,
             edge_index[0],
             dim=0,
-            dim_size=torch.sum(num_atoms).item(),  # noqa: E501
+            dim_size=total_num_atoms,
         )
 
         return atom_attr, edge_attr
