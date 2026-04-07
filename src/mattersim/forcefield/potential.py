@@ -706,8 +706,8 @@ class Potential(nn.Module):
         if self.model_name == "graphormer" or self.model_name == "geomformer":
             raise NotImplementedError
         else:
-            graph_batch.to(self.device)
             input = batch_to_dict(graph_batch)
+            input = move_to_device(input, self.device)
         result = self.forward(
             input,
             include_forces=include_forces,
@@ -1118,7 +1118,7 @@ def batch_to_dict(graph_batch, model_type="m3gnet", device="cuda"):
         # Edge-to-three-body map for scatter in ThreeDInteraction
         # (replaces repeat_interleave(arange, num_triple_ij) in message_passing.py)
         total_bonds = input["total_num_bonds"]
-        index_map = torch.arange(total_bonds)
+        index_map = torch.arange(total_bonds, device=num_triple_ij.device)
         input["three_body_edge_map"] = torch.repeat_interleave(
             index_map, num_triple_ij.view(-1)
         )
