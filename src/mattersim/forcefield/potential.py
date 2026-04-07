@@ -493,8 +493,8 @@ class Potential(nn.Module):
             if self.model_name == "graphormer" or self.model_name == "geomformer":
                 raise NotImplementedError
             else:
-                graph_batch.to(self.device)
                 input = batch_to_dict(graph_batch)
+                input = move_to_device(input, self.device)
             result = self.forward(
                 input,
                 include_forces=include_forces,
@@ -552,8 +552,8 @@ class Potential(nn.Module):
             if self.model_name == "graphormer" or self.model_name == "geomformer":
                 raise NotImplementedError
             else:
-                graph_batch.to(self.device)
                 input = batch_to_dict(graph_batch)
+                input = move_to_device(input, self.device)
             if mode == "train":
                 result = self.forward(
                     input,
@@ -756,9 +756,7 @@ class Potential(nn.Module):
                     input["cell"],
                     (torch.eye(3, device=self.device)[None, ...] + strain),
                 )
-                strain_augment = torch.repeat_interleave(
-                    strain, input["num_atoms"], dim=0
-                )
+                strain_augment = strain[input["batch"]]
                 input["atom_pos"] = torch.einsum(
                     "bi, bij -> bj",
                     input["atom_pos"],
@@ -1087,7 +1085,6 @@ def batch_to_dict(graph_batch, model_type="m3gnet", device="cuda"):
         num_triple_ij = graph_batch.num_triple_ij
         num_atoms = graph_batch.num_atoms
         num_graphs = graph_batch.num_graphs
-        num_graphs = torch.tensor(num_graphs)
         batch = graph_batch.batch
 
         # Resemble input dictionary
@@ -1102,14 +1099,47 @@ def batch_to_dict(graph_batch, model_type="m3gnet", device="cuda"):
         input["num_bonds"] = num_bonds
         input["num_triple_ij"] = num_triple_ij
         input["num_atoms"] = num_atoms
-        input["num_graphs"] = num_graphs
+        input["num_graphs"] = int(num_graphs)
         input["batch"] = batch
+
+        # Precompute derived values to avoid device-to-host sync on MPS/CUDA.
+        # These are cheap on CPU and prevent .item() / repeat_interleave syncs
+        # inside the model forward pass.
+        input["total_num_atoms"] = int(num_atoms.sum())
+        input["total_num_bonds"] = int(num_bonds.sum())
+
+        # Bond index bias for three-body offset computation
+        # (replaces repeat_interleave(cumsum, num_three_body) in m3gnet.py)
+        cumsum = torch.cumsum(num_bonds, dim=0) - num_bonds
+        input["bond_index_bias"] = torch.repeat_interleave(
+            cumsum, num_three_body, dim=0
+        ).unsqueeze(-1)
+
+        # Edge-to-three-body map for scatter in ThreeDInteraction
+        # (replaces repeat_interleave(arange, num_triple_ij) in message_passing.py)
+        total_bonds = input["total_num_bonds"]
+        index_map = torch.arange(total_bonds)
+        input["three_body_edge_map"] = torch.repeat_interleave(
+            index_map, num_triple_ij.view(-1)
+        )
+
     elif model_type == "graphormer" or model_type == "geomformer":
         raise NotImplementedError
     else:
         raise NotImplementedError
 
     return input
+
+
+def move_to_device(input_dict, device):
+    """Move all tensors in an input dict to the specified device.
+
+    Non-tensor values (Python ints, etc.) are kept as-is.
+    """
+    return {
+        k: v.to(device) if isinstance(v, torch.Tensor) else v
+        for k, v in input_dict.items()
+    }
 
 
 @deprecated(version="1.0.0", reason="Please use MatterSimCalculator instead.")
@@ -1211,8 +1241,8 @@ class DeepCalculator(Calculator):
             ):
                 raise NotImplementedError
             else:
-                graph_batch = graph_batch.to(self.device)
                 input = batch_to_dict(graph_batch)
+                input = move_to_device(input, self.device)
 
             result = self.potential.forward(
                 input, include_forces=True, include_stresses=self.compute_stress
@@ -1369,8 +1399,8 @@ class MatterSimCalculator(Calculator):
             ):
                 raise NotImplementedError
             else:
-                graph_batch = graph_batch.to(self.device)
                 input = batch_to_dict(graph_batch)
+                input = move_to_device(input, self.device)
 
             result = self.potential.forward(
                 input, include_forces=True, include_stresses=self.compute_stress
