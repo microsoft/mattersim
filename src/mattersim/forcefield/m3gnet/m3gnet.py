@@ -57,7 +57,7 @@ class M3Gnet(nn.Module):
             in_dim=max_z + 1, out_dims=[units], activation=None, use_bias=False
         )
         self.atom_embedding.apply(self.init_weights_uniform)
-        self.normalizer = AtomScaling(verbose=False, max_z=max_z)
+        self.normalizer = AtomScaling(verbose=False, max_z=max_z, device=device)
         self.max_z = max_z
         self.device = device
         self.model_args = {
