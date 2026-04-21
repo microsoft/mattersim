@@ -494,7 +494,7 @@ class Potential(nn.Module):
                 raise NotImplementedError
             else:
                 graph_batch.to(self.device)
-                input = batch_to_dict(graph_batch)
+                input = batch_to_dict(graph_batch, device=self.device)
             result = self.forward(
                 input,
                 include_forces=include_forces,
@@ -553,7 +553,7 @@ class Potential(nn.Module):
                 raise NotImplementedError
             else:
                 graph_batch.to(self.device)
-                input = batch_to_dict(graph_batch)
+                input = batch_to_dict(graph_batch, device=self.device)
             if mode == "train":
                 result = self.forward(
                     input,
@@ -707,7 +707,7 @@ class Potential(nn.Module):
             raise NotImplementedError
         else:
             graph_batch.to(self.device)
-            input = batch_to_dict(graph_batch)
+            input = batch_to_dict(graph_batch, device=self.device)
         result = self.forward(
             input,
             include_forces=include_forces,
@@ -1076,19 +1076,19 @@ class Potential(nn.Module):
 def batch_to_dict(graph_batch, model_type="m3gnet", device="cuda"):
     if model_type == "m3gnet":
         # TODO: key_list
-        atom_pos = graph_batch.atom_pos
-        cell = graph_batch.cell
-        pbc_offsets = graph_batch.pbc_offsets
-        atom_attr = graph_batch.atom_attr
-        edge_index = graph_batch.edge_index
-        three_body_indices = graph_batch.three_body_indices
-        num_three_body = graph_batch.num_three_body
-        num_bonds = graph_batch.num_bonds
-        num_triple_ij = graph_batch.num_triple_ij
-        num_atoms = graph_batch.num_atoms
+        atom_pos = graph_batch.atom_pos.to(device)
+        cell = graph_batch.cell.to(device)
+        pbc_offsets = graph_batch.pbc_offsets.to(device)
+        atom_attr = graph_batch.atom_attr.to(device)
+        edge_index = graph_batch.edge_index.to(device)
+        three_body_indices = graph_batch.three_body_indices.to(device)
+        num_three_body = graph_batch.num_three_body.to(device)
+        num_bonds = graph_batch.num_bonds.to(device)
+        num_triple_ij = graph_batch.num_triple_ij.to(device)
+        num_atoms = graph_batch.num_atoms.to(device)
         num_graphs = graph_batch.num_graphs
-        num_graphs = torch.tensor(num_graphs)
-        batch = graph_batch.batch
+        num_graphs = torch.tensor(num_graphs, device=device)
+        batch = graph_batch.batch.to(device)
 
         # Resemble input dictionary
         input = {}
@@ -1212,7 +1212,7 @@ class DeepCalculator(Calculator):
                 raise NotImplementedError
             else:
                 graph_batch = graph_batch.to(self.device)
-                input = batch_to_dict(graph_batch)
+                input = batch_to_dict(graph_batch, device=self.device)
 
             result = self.potential.forward(
                 input, include_forces=True, include_stresses=self.compute_stress
@@ -1370,7 +1370,7 @@ class MatterSimCalculator(Calculator):
                 raise NotImplementedError
             else:
                 graph_batch = graph_batch.to(self.device)
-                input = batch_to_dict(graph_batch)
+                input = batch_to_dict(graph_batch, device=self.device)
 
             result = self.potential.forward(
                 input, include_forces=True, include_stresses=self.compute_stress
