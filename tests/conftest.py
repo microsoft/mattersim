@@ -2,6 +2,8 @@
 
 import pytest
 import torch
+from ase import Atoms
+from ase.build import bulk
 
 
 def _available_devices():
@@ -21,3 +23,19 @@ def _available_devices():
 def device(request):
     """Yields each available device (cpu, cuda, mps)."""
     return request.param
+
+
+@pytest.fixture()
+def si_diamond():
+    """Si diamond primitive cell (2 atoms, FCC lattice, periodic)."""
+    return bulk("Si", "diamond", a=5.43)
+
+
+@pytest.fixture()
+def water_molecule():
+    """A non-periodic water molecule (3 atoms, no PBC)."""
+    return Atoms(
+        "OH2",
+        positions=[(0, 0, 0), (0.96, 0, 0), (-0.24, 0.93, 0)],
+        pbc=False,
+    )
