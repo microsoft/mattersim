@@ -38,13 +38,15 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    - name: Update environment.yaml with Python ${{ matrix.python-version }}
+      run: |
+        sed -i.bak "s/- python=3.10/- python=${{ matrix.python-version }}/" environment.yaml
+
     - name: Set up Micromamba
       uses: mamba-org/setup-micromamba@v1
       with:
         micromamba-version: 'latest'
         environment-file: environment.yaml
-        create-args: >-
-          python=${{ matrix.python-version }}
         init-shell: >-
           bash
         cache-environment: true
