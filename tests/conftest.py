@@ -39,3 +39,9 @@ def water_molecule():
         positions=[(0, 0, 0), (0.96, 0, 0), (-0.24, 0.93, 0)],
         pbc=False,
     )
+
+
+@pytest.fixture()
+def si_diamond_cubic():
+    """Si diamond conventional cubic cell (8 atoms, periodic)."""
+    return bulk("Si", "diamond", a=5.43, cubic=True)
