@@ -114,7 +114,7 @@ def get_fixed_radius_bonding(
     Returns:
         center_indices, neighbor_indices, images, distances
     """
-    pbc_ = np.array(structure.pbc, dtype=int)
+    pbc_ = np.array(structure.pbc, dtype=np.int64)
 
     lattice_matrix = np.ascontiguousarray(structure.cell[:], dtype=float)  # noqa: E501
 
@@ -186,7 +186,7 @@ class GraphConvertor:
         """
         # normalize the structure
         if isinstance(atoms, Atoms):
-            pbc_ = np.array(atoms.pbc, dtype=int)
+            pbc_ = np.array(atoms.pbc, dtype=np.int64)
             if np.all(pbc_ < 0.01) or not pbc:
                 min_x = np.min(atoms.positions[:, 0])
                 min_y = np.min(atoms.positions[:, 1])
@@ -206,7 +206,7 @@ class GraphConvertor:
                 max_len = max(x_len, y_len, z_len)
                 x_len = y_len = z_len = max_len
                 lattice_matrix = np.eye(3) * max_len
-                pbc_ = np.array([1, 1, 1], dtype=int)
+                pbc_ = np.array([1, 1, 1], dtype=np.int64)
                 warnings.warn(
                     "No PBC detected, using a large supercell with "
                     f"size {x_len}x{y_len}x{z_len} Angstrom**3",
