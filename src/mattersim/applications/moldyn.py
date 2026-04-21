@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+import warnings
 from typing import Union
 
 from ase import Atoms, units
@@ -12,8 +12,10 @@ from ase.md.velocitydistribution import (  # noqa: E501
 
 
 class MolecularDynamics:
-    """
-    This class is used for Molecular Dynamics.
+    """Molecular Dynamics wrapper around ASE thermostats.
+
+    Deprecated:
+        This class may be removed in a future version of MatterSim.
     """
 
     SUPPORTED_ENSEMBLE = ["NVT_BERENDSEN", "NVT_NOSE_HOOVER"]
@@ -54,6 +56,12 @@ class MolecularDynamics:
                 the new structures are appended to the trajectory file instead.
 
         """
+        warnings.warn(
+            "MolecularDynamics may be removed in a future version of "
+            "MatterSim.",
+            FutureWarning,
+            stacklevel=2,
+        )
         assert atoms.calc is not None, (
             "Molecular Dynamics simulation only accept "
             "ase atoms with an attached calculator"
