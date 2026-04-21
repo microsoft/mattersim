@@ -1098,7 +1098,7 @@ def batch_to_dict(graph_batch, model_type="m3gnet", device="cuda"):
         input["num_bonds"] = num_bonds
         input["num_triple_ij"] = num_triple_ij
         input["num_atoms"] = num_atoms
-        input["num_graphs"] = int(num_graphs)
+        input["num_graphs"] = num_graphs
         input["batch"] = batch
 
         # Precompute derived values to avoid device-to-host sync on MPS/CUDA.
