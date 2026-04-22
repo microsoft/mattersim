@@ -44,6 +44,7 @@ dependencies = [
     "pymatgen",
     "seekpath",
     "phonopy",
+    "phono3py",
     "torch-ema>=0.3",
     "torch>=2.2.0",
     "torch_geometric>=2.5.3",
