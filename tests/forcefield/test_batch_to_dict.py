@@ -49,41 +49,41 @@ def _make_graph_batch(device="cpu"):
 class TestBatchToDict:
     """Tests for the batch_to_dict helper function."""
 
-    def test_all_tensors_on_target_device(self, device):
+    def test_all_tensors_on_target_device(self, available_device):
         """Every tensor in the returned dict must be on the requested device."""
         batch = _make_graph_batch("cpu")
-        result = batch_to_dict(batch, device=device)
+        result = batch_to_dict(batch, device=available_device)
 
         for key in TENSOR_KEYS:
             assert key in result, f"Missing key: {key}"
             val = result[key]
             if isinstance(val, torch.Tensor):
-                assert val.device.type == device, (
-                    f"'{key}' on {val.device}, expected {device}"
+                assert val.device.type == available_device, (
+                    f"'{key}' on {val.device}, expected {available_device}"
                 )
 
-    def test_cross_device_move(self, device):
+    def test_cross_device_move(self, available_device):
         """Tensors created on CPU must end up on the target device —
         the device parameter must not be silently ignored."""
         batch = _make_graph_batch("cpu")
-        result = batch_to_dict(batch, device=device)
+        result = batch_to_dict(batch, device=available_device)
 
         for key in TENSOR_KEYS:
             val = result[key]
             if isinstance(val, torch.Tensor):
-                assert val.device.type == device, (
-                    f"'{key}' still on {val.device} instead of {device}"
+                assert val.device.type == available_device, (
+                    f"'{key}' still on {val.device} instead of {available_device}"
                 )
 
-    def test_num_graphs_is_tensor_on_correct_device(self, device):
+    def test_num_graphs_is_tensor_on_correct_device(self, available_device):
         """num_graphs (a plain int on the batch) must become a tensor
         on the target device."""
         batch = _make_graph_batch("cpu")
-        result = batch_to_dict(batch, device=device)
+        result = batch_to_dict(batch, device=available_device)
 
         assert isinstance(result["num_graphs"], torch.Tensor)
         assert result["num_graphs"].item() == 1
-        assert result["num_graphs"].device.type == device
+        assert result["num_graphs"].device.type == available_device
 
     def test_returns_all_expected_keys(self):
         """The returned dict must contain exactly the expected keys."""

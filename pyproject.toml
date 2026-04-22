@@ -44,6 +44,7 @@ dependencies = [
     "pymatgen",
     "seekpath",
     "phonopy",
+    "phono3py",
     "torch-ema>=0.3",
     "torch>=2.2.0",
     "torch_geometric>=2.5.3",
@@ -97,3 +98,8 @@ build = "cp3{10,11,12,13}-*"
 manylinux-x86_64-image = "manylinux2014"
 # Skip PyPy and all Windows/macOS builds
 skip = "pp*,*win*,*macos*"
+
+[tool.pytest.ini_options]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]

@@ -1,4 +1,4 @@
-name: Build and Test with Mamba
+name: Build and Test
 
 on:
   push:
@@ -22,14 +22,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Primary coverage: the floor version pinned in environment.yaml /
-        # pyproject.toml, plus one current Python on Linux to catch
-        # forward-compat regressions in dependencies.
         os: [ubuntu-latest]
         python-version: ['3.10', '3.12']
-        # Smoke-test on macOS with the pinned Python only — catches
-        # platform-specific build/import issues without paying for a full
-        # OS x Python matrix on expensive macOS runners.
         include:
           - os: macos-latest
             python-version: '3.10'
@@ -38,26 +32,13 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Update environment.yaml with Python ${{ matrix.python-version }}
-      run: |
-        sed -i.bak "s/- python=3.10/- python=${{ matrix.python-version }}/" environment.yaml
-
-    - name: Set up Micromamba
-      uses: mamba-org/setup-micromamba@v1
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
       with:
-        micromamba-version: 'latest'
-        environment-file: environment.yaml
-        init-shell: >-
-          bash
-        cache-environment: true
-        post-cleanup: 'all'
+        enable-cache: true
 
-    - name: Install package and test dependencies
-      shell: bash -l {0}
-      run: |
-        uv pip install ".[dev]"
+    - name: Set up Python ${{ matrix.python-version }}
+      run: uv python install ${{ matrix.python-version }}
 
     - name: Run tests
-      shell: bash -l {0}
-      run: |
-        pytest -v tests --disable-warnings
+      run: uv run --python ${{ matrix.python-version }} --extra dev pytest -v tests --disable-warnings -m "not slow"
