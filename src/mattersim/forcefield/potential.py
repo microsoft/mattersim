@@ -493,7 +493,6 @@ class Potential(nn.Module):
             if self.model_name == "graphormer" or self.model_name == "geomformer":
                 raise NotImplementedError
             else:
-                graph_batch.to(self.device)
                 input = batch_to_dict(graph_batch, device=self.device)
             result = self.forward(
                 input,
@@ -552,7 +551,6 @@ class Potential(nn.Module):
             if self.model_name == "graphormer" or self.model_name == "geomformer":
                 raise NotImplementedError
             else:
-                graph_batch.to(self.device)
                 input = batch_to_dict(graph_batch, device=self.device)
             if mode == "train":
                 result = self.forward(
@@ -756,9 +754,7 @@ class Potential(nn.Module):
                     input["cell"],
                     (torch.eye(3, device=self.device)[None, ...] + strain),
                 )
-                strain_augment = torch.repeat_interleave(
-                    strain, input["num_atoms"], dim=0
-                )
+                strain_augment = strain[input["batch"]]
                 input["atom_pos"] = torch.einsum(
                     "bi, bij -> bj",
                     input["atom_pos"],
@@ -1076,6 +1072,11 @@ class Potential(nn.Module):
 def batch_to_dict(graph_batch, model_type="m3gnet", device="cuda"):
     if model_type == "m3gnet":
         # TODO: key_list
+        # Precompute scalar sums on CPU before moving tensors to device,
+        # to avoid device-to-host sync when calling int() on MPS/CUDA tensors.
+        total_num_atoms = int(graph_batch.num_atoms.sum())
+        total_num_bonds = int(graph_batch.num_bonds.sum())
+
         atom_pos = graph_batch.atom_pos.to(device)
         cell = graph_batch.cell.to(device)
         pbc_offsets = graph_batch.pbc_offsets.to(device)
@@ -1104,6 +1105,26 @@ def batch_to_dict(graph_batch, model_type="m3gnet", device="cuda"):
         input["num_atoms"] = num_atoms
         input["num_graphs"] = num_graphs
         input["batch"] = batch
+
+        # Precomputed derived values to avoid device-to-host sync on MPS/CUDA.
+        input["total_num_atoms"] = total_num_atoms
+        input["total_num_bonds"] = total_num_bonds
+
+        # Bond index bias for three-body offset computation
+        # (replaces repeat_interleave(cumsum, num_three_body) in m3gnet.py)
+        cumsum = torch.cumsum(num_bonds, dim=0) - num_bonds
+        input["bond_index_bias"] = torch.repeat_interleave(
+            cumsum, num_three_body, dim=0
+        ).unsqueeze(-1)
+
+        # Edge-to-three-body map for scatter in ThreeDInteraction
+        # (replaces repeat_interleave(arange, num_triple_ij) in message_passing.py)
+        total_bonds = input["total_num_bonds"]
+        index_map = torch.arange(total_bonds, device=num_triple_ij.device)
+        input["three_body_edge_map"] = torch.repeat_interleave(
+            index_map, num_triple_ij.view(-1)
+        )
+
     elif model_type == "graphormer" or model_type == "geomformer":
         raise NotImplementedError
     else:
@@ -1211,9 +1232,7 @@ class DeepCalculator(Calculator):
             ):
                 raise NotImplementedError
             else:
-                graph_batch = graph_batch.to(self.device)
                 input = batch_to_dict(graph_batch, device=self.device)
-
             result = self.potential.forward(
                 input, include_forces=True, include_stresses=self.compute_stress
             )
@@ -1369,9 +1388,7 @@ class MatterSimCalculator(Calculator):
             ):
                 raise NotImplementedError
             else:
-                graph_batch = graph_batch.to(self.device)
                 input = batch_to_dict(graph_batch, device=self.device)
-
             result = self.potential.forward(
                 input, include_forces=True, include_stresses=self.compute_stress
             )

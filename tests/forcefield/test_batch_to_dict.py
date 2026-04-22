@@ -21,6 +21,10 @@ TENSOR_KEYS = [
     "num_atoms",
     "num_graphs",
     "batch",
+    "total_num_atoms",
+    "total_num_bonds",
+    "bond_index_bias",
+    "three_body_edge_map",
 ]
 
 
@@ -35,7 +39,7 @@ def _make_graph_batch(device="cpu"):
         three_body_indices=torch.randint(0, 6, (3, 8), device=device),
         num_three_body=torch.tensor([8], device=device),
         num_bonds=torch.tensor([6], device=device),
-        num_triple_ij=torch.tensor([8], device=device),
+        num_triple_ij=torch.tensor([3, 2, 1, 0, 0, 0], device=device),
         num_atoms=torch.tensor([4], device=device),
         num_graphs=1,  # scalar, not a tensor on the batch object
         batch=torch.zeros(4, dtype=torch.long, device=device),
@@ -52,9 +56,11 @@ class TestBatchToDict:
 
         for key in TENSOR_KEYS:
             assert key in result, f"Missing key: {key}"
-            assert result[key].device.type == device, (
-                f"'{key}' on {result[key].device}, expected {device}"
-            )
+            val = result[key]
+            if isinstance(val, torch.Tensor):
+                assert val.device.type == device, (
+                    f"'{key}' on {val.device}, expected {device}"
+                )
 
     def test_cross_device_move(self, device):
         """Tensors created on CPU must end up on the target device —
@@ -63,9 +69,11 @@ class TestBatchToDict:
         result = batch_to_dict(batch, device=device)
 
         for key in TENSOR_KEYS:
-            assert result[key].device.type == device, (
-                f"'{key}' still on {result[key].device} instead of {device}"
-            )
+            val = result[key]
+            if isinstance(val, torch.Tensor):
+                assert val.device.type == device, (
+                    f"'{key}' still on {val.device} instead of {device}"
+                )
 
     def test_num_graphs_is_tensor_on_correct_device(self, device):
         """num_graphs (a plain int on the batch) must become a tensor

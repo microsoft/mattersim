@@ -82,25 +82,33 @@ class M3Gnet(nn.Module):
         atom_attr = input["atom_attr"]
         edge_index = input["edge_index"].long()
         three_body_indices = input["three_body_indices"].long()
-        num_three_body = input["num_three_body"]
         num_bonds = input["num_bonds"]
         num_triple_ij = input["num_triple_ij"]
         num_atoms = input["num_atoms"]
         num_graphs = input["num_graphs"]
         batch = input["batch"]
 
+        # Use precomputed values if available, otherwise compute on the fly
+        # (backward-compat for callers not using batch_to_dict)
+        total_num_atoms = input.get("total_num_atoms", int(num_atoms.sum()))
+        total_num_bonds = input.get("total_num_bonds", int(num_bonds.sum()))
+
+        bond_index_bias = input.get("bond_index_bias", None)
+        if bond_index_bias is None:
+            cumsum = torch.cumsum(num_bonds, dim=0) - num_bonds
+            bond_index_bias = torch.repeat_interleave(
+                cumsum, input["num_three_body"], dim=0
+            ).unsqueeze(-1)
+
+        three_body_edge_map = input.get("three_body_edge_map", None)
+
         # -------------------------------------------------------------#
-        cumsum = torch.cumsum(num_bonds, dim=0) - num_bonds
-        index_bias = torch.repeat_interleave(  # noqa: F501
-            cumsum, num_three_body, dim=0
-        ).unsqueeze(-1)
-        three_body_indices = three_body_indices + index_bias
+        three_body_indices = three_body_indices + bond_index_bias
 
         # === Refer to the implementation of M3GNet,        ===
         # === we should re-compute the following attributes ===
         # edge_length, edge_vector(optional), triple_edge_length, theta_jik
-        atoms_batch = torch.repeat_interleave(repeats=num_atoms)
-        edge_batch = atoms_batch[edge_index[0]]
+        edge_batch = batch[edge_index[0]]
         edge_vector = pos[edge_index[0]] - (
             pos[edge_index[1]]
             + torch.einsum("bi, bij->bj", pbc_offsets, cell[edge_batch])
@@ -137,6 +145,9 @@ class M3Gnet(nn.Module):
                 num_bonds,
                 num_triple_ij,
                 num_atoms,
+                total_num_atoms=total_num_atoms,
+                total_num_bonds=total_num_bonds,
+                three_body_edge_map=three_body_edge_map,
             )
 
         energies_i = self.final(atom_attr).view(-1)  # [batch_size*num_atoms]

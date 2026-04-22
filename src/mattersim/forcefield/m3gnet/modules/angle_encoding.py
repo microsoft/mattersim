@@ -52,8 +52,8 @@ class SphericalBasisLayer(nn.Module):
         self.register_buffer(
             "factor", torch.sqrt(torch.tensor(2.0 / (self.cutoff**3)))
         )
-        self.coef = torch.zeros(4, 9, 4)
-        self.coef[0, 0, :] = torch.tensor(
+        coef = torch.zeros(4, 9, 4)
+        coef[0, 0, :] = torch.tensor(
             [
                 3.14159274101257,
                 6.28318548202515,
@@ -61,7 +61,7 @@ class SphericalBasisLayer(nn.Module):
                 12.5663709640503,
             ]  # noqa: E501
         )
-        self.coef[1, :4, :] = torch.tensor(
+        coef[1, :4, :] = torch.tensor(
             [
                 [
                     -1.02446483277785,
@@ -89,7 +89,7 @@ class SphericalBasisLayer(nn.Module):
                 ],  # noqa: E501
             ]
         )
-        self.coef[2, :6, :] = torch.tensor(
+        coef[2, :6, :] = torch.tensor(
             [
                 [
                     -1.04807944170731,
@@ -129,7 +129,7 @@ class SphericalBasisLayer(nn.Module):
                 ],  # noqa: E501
             ]
         )
-        self.coef[3, :8, :] = torch.tensor(
+        coef[3, :8, :] = torch.tensor(
             [
                 [
                     1.06942831392075,
@@ -181,6 +181,7 @@ class SphericalBasisLayer(nn.Module):
                 ],  # noqa: E501
             ]
         )
+        self.register_buffer("coef", coef)
 
     def forward(self, r, theta_val):
         r = r / self.cutoff
