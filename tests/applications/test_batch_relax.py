@@ -6,24 +6,13 @@ from mattersim.applications.batch_relax import BatchRelaxer
 from mattersim.forcefield.potential import Potential
 
 
-def _perturb(atoms, strain=0.0, displacement=0.01):
-    """Return a copy of atoms with optional cell strain and position noise."""
-    copy = atoms.copy()
-    if strain:
-        copy.set_cell(copy.cell * (1 + strain), scale_atoms=True)
-    if displacement:
-        rng = np.random.default_rng(42)
-        copy.positions += rng.normal(scale=displacement, size=copy.positions.shape)
-    return copy
-
-
-def test_default_batch_relaxer(device, si_diamond_cubic):
+def test_default_batch_relaxer(device, si_diamond_cubic, perturb):
     print(f"\n>>> Running test_default_batch_relaxer on device: {device}")
     potential = Potential.from_checkpoint(device=device)
 
     atoms_ideal = si_diamond_cubic
-    atoms_displaced = _perturb(si_diamond_cubic, displacement=0.05)
-    atoms_expanded = _perturb(si_diamond_cubic, strain=0.2, displacement=0.0)
+    atoms_displaced = perturb(si_diamond_cubic, displacement=0.05)
+    atoms_expanded = perturb(si_diamond_cubic, strain=0.2)
     atoms_batch = [atoms_ideal, atoms_displaced, atoms_expanded]
 
     relaxer = BatchRelaxer(potential, fmax=0.01, filter="EXPCELLFILTER")

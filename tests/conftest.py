@@ -1,5 +1,6 @@
 """Shared pytest fixtures for mattersim tests."""
 
+import numpy as np
 import pytest
 import torch
 from ase import Atoms
@@ -45,3 +46,34 @@ def water_molecule():
         positions=[(0, 0, 0), (0.96, 0, 0), (-0.24, 0.93, 0)],
         pbc=False,
     )
+
+
+@pytest.fixture()
+def perturb():
+    """Factory fixture that returns a function to perturb atomic structures.
+
+    Usage:
+        atoms_displaced = perturb(atoms, displacement=0.05)
+        atoms_expanded = perturb(atoms, strain=0.2)
+        atoms_both = perturb(atoms, strain=0.1, displacement=0.02)
+    """
+
+    def _perturb(atoms, strain=0.0, displacement=0.0, seed=42):
+        """Return a copy of atoms with optional cell strain and position noise.
+
+        Args:
+            atoms: ASE Atoms object to perturb.
+            strain: Fractional cell expansion (e.g. 0.2 for 20%).
+            displacement: Standard deviation of Gaussian noise added to
+                positions, in Angstrom.
+            seed: Random seed for reproducibility.
+        """
+        copy = atoms.copy()
+        if strain:
+            copy.set_cell(copy.cell * (1 + strain), scale_atoms=True)
+        if displacement:
+            rng = np.random.default_rng(seed)
+            copy.positions += rng.normal(scale=displacement, size=copy.positions.shape)
+        return copy
+
+    return _perturb
