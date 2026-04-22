@@ -1,61 +1,29 @@
 # -*- coding: utf-8 -*-
 import numpy as np
-from ase import Atoms
+import pytest
 
 from mattersim.applications.batch_relax import BatchRelaxer
 from mattersim.forcefield.potential import Potential
 
 
-def _make_test_atoms():
-    """Return (ideal, displaced, expanded) diamond C8 structures."""
-    a = 3.567
-    positions = [
-        (0, 0, 0),
-        (a / 4, a / 4, a / 4),
-        (a / 2, a / 2, 0),
-        (a / 2, 0, a / 2),
-        (0, a / 2, a / 2),
-        (a / 4, 3 * a / 4, 3 * a / 4),
-        (3 * a / 4, a / 4, 3 * a / 4),
-        (3 * a / 4, 3 * a / 4, a / 4),
-    ]
-    cell = [(a, 0, 0), (0, a, 0), (0, 0, a)]
-    atoms_ideal = Atoms("C8", positions=positions, cell=cell, pbc=True)
-
-    a = 3.567
-    positions_d = [
-        (0, 0, 0),
-        (a / 4, a / 4, a / 4),
-        (a / 2, a / 2, 0),
-        (a / 2, 0, a / 2),
-        (0, a / 2, a / 2),
-        (a / 4, 3 * a / 4, 3 * a / 4.01),  # displaced
-        (3 * a / 4, a / 4.01, 3 * a / 4),  # displaced
-        (3 * a / 4, 3 * a / 4, a / 4),
-    ]
-    atoms_displaced = Atoms("C8", positions=positions_d, cell=cell, pbc=True)
-
-    a2 = 3.567 * 1.2
-    positions_e = [
-        (0, 0, 0),
-        (a2 / 4, a2 / 4, a2 / 4),
-        (a2 / 2, a2 / 2, 0),
-        (a2 / 2, 0, a2 / 2),
-        (0, a2 / 2, a2 / 2),
-        (a2 / 4, 3 * a2 / 4, 3 * a2 / 4),
-        (3 * a2 / 4, a2 / 4, 3 * a2 / 4),
-        (3 * a2 / 4, 3 * a2 / 4, a2 / 4),
-    ]
-    cell_e = [(a2, 0, 0), (0, a2, 0), (0, 0, a2)]
-    atoms_expanded = Atoms("C8", positions=positions_e, cell=cell_e, pbc=True)
-
-    return atoms_ideal, atoms_displaced, atoms_expanded
+def _perturb(atoms, strain=0.0, displacement=0.01):
+    """Return a copy of atoms with optional cell strain and position noise."""
+    copy = atoms.copy()
+    if strain:
+        copy.set_cell(copy.cell * (1 + strain), scale_atoms=True)
+    if displacement:
+        rng = np.random.default_rng(42)
+        copy.positions += rng.normal(scale=displacement, size=copy.positions.shape)
+    return copy
 
 
-def test_default_batch_relaxer(device):
+def test_default_batch_relaxer(device, si_diamond_cubic):
     print(f"\n>>> Running test_default_batch_relaxer on device: {device}")
     potential = Potential.from_checkpoint(device=device)
-    atoms_ideal, atoms_displaced, atoms_expanded = _make_test_atoms()
+
+    atoms_ideal = si_diamond_cubic
+    atoms_displaced = _perturb(si_diamond_cubic, displacement=0.05)
+    atoms_expanded = _perturb(si_diamond_cubic, strain=0.2, displacement=0.0)
     atoms_batch = [atoms_ideal, atoms_displaced, atoms_expanded]
 
     relaxer = BatchRelaxer(potential, fmax=0.01, filter="EXPCELLFILTER")
