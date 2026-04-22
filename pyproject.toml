@@ -97,3 +97,8 @@ build = "cp3{10,11,12,13}-*"
 manylinux-x86_64-image = "manylinux2014"
 # Skip PyPy and all Windows/macOS builds
 skip = "pp*,*win*,*macos*"
+
+[tool.pytest.ini_options]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]

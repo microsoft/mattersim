@@ -17,6 +17,15 @@ def _available_devices():
     return devices
 
 
+def best_device():
+    """Return the fastest available device."""
+    if torch.cuda.is_available():
+        return "cuda"
+    if torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
+
+
 @pytest.fixture(
     params=_available_devices(),
     ids=lambda d: f"device={d}",
@@ -77,3 +86,11 @@ def perturb():
         return copy
 
     return _perturb
+
+
+@pytest.fixture(scope="module")
+def mattersim_calc():
+    """MatterSim 1M calculator on the best available device."""
+    from mattersim.forcefield import MatterSimCalculator
+
+    return MatterSimCalculator(device=best_device())
