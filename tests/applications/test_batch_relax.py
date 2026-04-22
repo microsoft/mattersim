@@ -6,9 +6,9 @@ from mattersim.applications.batch_relax import BatchRelaxer
 from mattersim.forcefield.potential import Potential
 
 
-def test_default_batch_relaxer(device, si_diamond_cubic, perturb):
-    print(f"\n>>> Running test_default_batch_relaxer on device: {device}")
-    potential = Potential.from_checkpoint(device=device)
+def test_default_batch_relaxer(available_device, si_diamond_cubic, perturb):
+    print(f"\n>>> Running test_default_batch_relaxer on device: {available_device}")
+    potential = Potential.from_checkpoint(device=available_device)
 
     atoms_ideal = si_diamond_cubic
     atoms_displaced = perturb(si_diamond_cubic, displacement=0.05)

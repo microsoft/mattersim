@@ -11,8 +11,8 @@ from mattersim.applications.bte import BTEWorkflow, BTEWorkflowError
 class TestBTEWorkflowInit:
     """Tests for BTEWorkflow initialization and parameter validation."""
 
-    def test_init_with_required_params(self, si_diamond, mattersim_calc):
-        si_diamond.calc = mattersim_calc
+    def test_init_with_required_params(self, si_diamond, mattersim_calc_best_device):
+        si_diamond.calc = mattersim_calc_best_device
         workflow = BTEWorkflow(
             atoms=si_diamond,
             supercell_matrix=np.array([2, 2, 2]),
@@ -26,8 +26,8 @@ class TestBTEWorkflowInit:
             workflow.supercell_matrix, np.diag([2, 2, 2])
         )
 
-    def test_init_supercell_matrix_shape_3x3(self, si_diamond, mattersim_calc):
-        si_diamond.calc = mattersim_calc
+    def test_init_supercell_matrix_shape_3x3(self, si_diamond, mattersim_calc_best_device):
+        si_diamond.calc = mattersim_calc_best_device
         sc = np.array([[2, 0, 0], [0, 2, 0], [0, 0, 2]])
         workflow = BTEWorkflow(
             atoms=si_diamond,
@@ -36,8 +36,8 @@ class TestBTEWorkflowInit:
         )
         assert np.array_equal(workflow.supercell_matrix, sc)
 
-    def test_init_lbte_method(self, si_diamond, mattersim_calc):
-        si_diamond.calc = mattersim_calc
+    def test_init_lbte_method(self, si_diamond, mattersim_calc_best_device):
+        si_diamond.calc = mattersim_calc_best_device
         workflow = BTEWorkflow(
             atoms=si_diamond,
             supercell_matrix=np.array([2, 2, 2]),
@@ -46,8 +46,8 @@ class TestBTEWorkflowInit:
         )
         assert workflow.method == "LBTE"
 
-    def test_init_unsupported_method_raises(self, si_diamond, mattersim_calc):
-        si_diamond.calc = mattersim_calc
+    def test_init_unsupported_method_raises(self, si_diamond, mattersim_calc_best_device):
+        si_diamond.calc = mattersim_calc_best_device
         with pytest.raises(AssertionError):
             BTEWorkflow(
                 atoms=si_diamond,
@@ -64,8 +64,8 @@ class TestBTEWorkflowInit:
                 qpoints_mesh=np.array([2, 2, 2]),
             )
 
-    def test_init_custom_temperature_range(self, si_diamond, mattersim_calc):
-        si_diamond.calc = mattersim_calc
+    def test_init_custom_temperature_range(self, si_diamond, mattersim_calc_best_device):
+        si_diamond.calc = mattersim_calc_best_device
         workflow = BTEWorkflow(
             atoms=si_diamond,
             supercell_matrix=np.array([2, 2, 2]),
@@ -98,15 +98,15 @@ class TestBTEWorkflowRun:
     REF_KAPPA_300K = 40.5   # xx = yy = zz at 300 K
 
     def test_rta_workflow_produces_valid_results(
-        self, si_diamond, device, tmp_path
+        self, si_diamond, available_device, tmp_path
     ):
         """Full RTA workflow should produce FC2/FC3 and correct kappa for Si."""
         from mattersim.forcefield import MatterSimCalculator
 
-        si_diamond.calc = MatterSimCalculator(device=device)
+        si_diamond.calc = MatterSimCalculator(device=available_device)
         workflow = BTEWorkflow(
             atoms=si_diamond,
-            work_dir=str(tmp_path / f"bte_rta_{device}"),
+            work_dir=str(tmp_path / f"bte_rta_{available_device}"),
             supercell_matrix=np.array([2, 2, 2]),
             qpoints_mesh=np.array([2, 2, 2]),
             tmin=100,
@@ -154,10 +154,10 @@ class TestBTEWorkflowRun:
         assert np.all(np.abs(kappa[0, :, 3:]) < 0.1)
 
     def test_workflow_creates_output_dir(
-        self, si_diamond, mattersim_calc, tmp_path
+        self, si_diamond, mattersim_calc_best_device, tmp_path
     ):
         """Workflow should create the work directory."""
-        si_diamond.calc = mattersim_calc
+        si_diamond.calc = mattersim_calc_best_device
         out_dir = str(tmp_path / "new_dir")
         workflow = BTEWorkflow(
             atoms=si_diamond,
@@ -191,13 +191,13 @@ class TestBTEWorkflowRunStrict:
     REF_KAPPA_200K = 228.4
     REF_KAPPA_300K = 130.7
 
-    def test_rta_strict(self, si_diamond, mattersim_calc, tmp_path):
+    def test_rta_strict(self, si_diamond, mattersim_calc_best_device, tmp_path):
         """Strict BTE test with 4x4x4 supercell and 16x16x16 q-mesh.
         Requires CUDA or MPS — skipped on CPU-only machines."""
-        if str(mattersim_calc.device) == "cpu":
+        if str(mattersim_calc_best_device.device) == "cpu":
             pytest.skip("No accelerator (CUDA/MPS) available")
 
-        si_diamond.calc = mattersim_calc
+        si_diamond.calc = mattersim_calc_best_device
         workflow = BTEWorkflow(
             atoms=si_diamond,
             work_dir=str(tmp_path / "bte_strict"),

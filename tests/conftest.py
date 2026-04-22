@@ -7,7 +7,7 @@ from ase import Atoms
 from ase.build import bulk
 
 
-def _available_devices():
+def available_devices():
     """Return all available torch devices on this machine."""
     devices = ["cpu"]
     if torch.cuda.is_available():
@@ -27,10 +27,10 @@ def best_device():
 
 
 @pytest.fixture(
-    params=_available_devices(),
+    params=available_devices(),
     ids=lambda d: f"device={d}",
 )
-def device(request):
+def available_device(request):
     """Yields each available device (cpu, cuda, mps)."""
     return request.param
 
@@ -89,7 +89,7 @@ def perturb():
 
 
 @pytest.fixture(scope="module")
-def mattersim_calc():
+def mattersim_calc_best_device():
     """MatterSim 1M calculator on the best available device."""
     from mattersim.forcefield import MatterSimCalculator
 
