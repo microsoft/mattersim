@@ -41,4 +41,4 @@ jobs:
       run: uv python install ${{ matrix.python-version }}
 
     - name: Run tests
-      run: uv run --python ${{ matrix.python-version }} pytest -v tests --disable-warnings -m "not slow"
+      run: uv run --python ${{ matrix.python-version }} --extra dev pytest -v tests --disable-warnings -m "not slow"
