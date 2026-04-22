@@ -1072,6 +1072,11 @@ class Potential(nn.Module):
 def batch_to_dict(graph_batch, model_type="m3gnet", device="cuda"):
     if model_type == "m3gnet":
         # TODO: key_list
+        # Precompute scalar sums on CPU before moving tensors to device,
+        # to avoid device-to-host sync when calling int() on MPS/CUDA tensors.
+        total_num_atoms = int(graph_batch.num_atoms.sum())
+        total_num_bonds = int(graph_batch.num_bonds.sum())
+
         atom_pos = graph_batch.atom_pos.to(device)
         cell = graph_batch.cell.to(device)
         pbc_offsets = graph_batch.pbc_offsets.to(device)
@@ -1101,11 +1106,9 @@ def batch_to_dict(graph_batch, model_type="m3gnet", device="cuda"):
         input["num_graphs"] = num_graphs
         input["batch"] = batch
 
-        # Precompute derived values to avoid device-to-host sync on MPS/CUDA.
-        # These are cheap on CPU and prevent .item() / repeat_interleave syncs
-        # inside the model forward pass.
-        input["total_num_atoms"] = int(num_atoms.sum())
-        input["total_num_bonds"] = int(num_bonds.sum())
+        # Precomputed derived values to avoid device-to-host sync on MPS/CUDA.
+        input["total_num_atoms"] = total_num_atoms
+        input["total_num_bonds"] = total_num_bonds
 
         # Bond index bias for three-body offset computation
         # (replaces repeat_interleave(cumsum, num_three_body) in m3gnet.py)
