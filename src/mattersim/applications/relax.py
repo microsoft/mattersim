@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-
+import contextlib
+import io
+import sys
 import warnings
 from typing import Iterable, List, Tuple, Union
 
@@ -55,6 +57,7 @@ class Relaxer(object):
         steps: int = 500,
         fmax: float = 0.01,
         params_filter: dict = {},
+        verbose: bool = True,
         **kwargs,
     ) -> Tuple[bool, Atoms]:
         """
@@ -65,6 +68,8 @@ class Relaxer(object):
             steps (int): The maximum number of steps to take.
             fmax (float): The maximum force allowed.
             params_filter (dict): The parameters for the filter.
+            verbose (bool): If True, print optimizer progress. If False,
+                suppress all output during relaxation.
             kwargs: Additional keyword arguments for the optimizer.
         """
 
@@ -98,8 +103,11 @@ class Relaxer(object):
             ecf = self.filter(atoms, mask=mask, **params_filter)
         else:
             ecf = atoms
-        optimizer = self.optimizer(ecf, **kwargs)
-        optimizer.run(fmax=fmax, steps=steps)
+
+        stream = sys.stdout if verbose else io.StringIO()
+        with contextlib.redirect_stdout(stream):
+            optimizer = self.optimizer(ecf, **kwargs)
+            optimizer.run(fmax=fmax, steps=steps)
 
         converged = optimizer.get_number_of_steps() < steps
 
