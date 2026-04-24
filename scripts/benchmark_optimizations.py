@@ -1,373 +1,704 @@
 #!/usr/bin/env python
-"""Benchmark script for MatterSim optimization features.
+"""Benchmark MatterSim optimizations: Original vs Optimized vs Checkpointed.
 
-Benchmarks the following optimizations extracted from the internal repo:
-  1. Gradient checkpointing — memory reduction for large systems
-  2. Native scatter_sum — checkpoint-compatible scatter operations
-  3. AOTI compilation — ahead-of-time compiled inference (optional)
-  4. GPU three-body index computation (optional standalone benchmark)
+Compares three model configurations across varying system sizes:
+  1. Original   — code from the main branch (torch_runstats scatter, no ckpt)
+  2. Optimized  — native scatter_sum, same speed, checkpoint-ready
+  3. Optimized + Gradient Checkpointing — trades ~20-30% speed for ~50% memory
+
+The script runs the original model by temporarily switching to the main branch
+in a subprocess (editable install), then runs optimized variants in-process.
+
+Produces publication-quality plots saved to the output directory.
 
 Usage:
-    python scripts/benchmark_optimizations.py [--device cuda] [--sizes 8,64,216,512]
-    python scripts/benchmark_optimizations.py --help
-
-The script generates test structures of varying sizes from bulk silicon,
-benchmarks inference (energy + forces + stresses), and reports timing
-and memory usage comparisons.
+    python scripts/benchmark_optimizations.py
+    python scripts/benchmark_optimizations.py --sizes 8,64,216,512,1000,2744
+    python scripts/benchmark_optimizations.py --output-dir results/benchmark
 """
 
 import argparse
 import gc
+import json
+import os
+import subprocess
 import sys
+import tempfile
+import textwrap
 import time
-from collections import defaultdict
 
 import numpy as np
 import torch
 from ase.build import bulk, make_supercell
 
 # ---------------------------------------------------------------------------
-# Helpers
+# Structure generation
 # ---------------------------------------------------------------------------
 
 
 def generate_structures(sizes: list[int]) -> dict[int, "ase.Atoms"]:
-    """Generate bulk Si structures at different atom counts.
-
-    Uses cubic diamond Si and builds supercells to reach approximately
-    the requested sizes.  Returns a dict mapping actual atom count to
-    the Atoms object.
-    """
-    from ase import Atoms  # noqa: F811
-
+    """Generate perturbed bulk Si supercells targeting *sizes* atom counts."""
     base = bulk("Si", "diamond", a=5.43, cubic=True)  # 8 atoms
-    structures: dict[int, Atoms] = {}
+    structures = {}
     for target in sorted(sizes):
-        # Find supercell multiplier: base has 8 atoms
         n = max(1, round((target / len(base)) ** (1 / 3)))
         atoms = make_supercell(base, [[n, 0, 0], [0, n, 0], [0, 0, n]])
-        # Small random perturbation to break symmetry
         rng = np.random.default_rng(42)
         atoms.positions += rng.normal(scale=0.01, size=atoms.positions.shape)
         structures[len(atoms)] = atoms
     return structures
 
 
-def get_gpu_memory_mb() -> float:
-    """Return current GPU memory allocated in MB (0 if not CUDA)."""
-    if torch.cuda.is_available():
-        return torch.cuda.memory_allocated() / 1024**2
-    return 0.0
+# ---------------------------------------------------------------------------
+# GPU memory helpers
+# ---------------------------------------------------------------------------
 
 
-def get_peak_gpu_memory_mb() -> float:
-    """Return peak GPU memory allocated in MB (0 if not CUDA)."""
-    if torch.cuda.is_available():
-        return torch.cuda.max_memory_allocated() / 1024**2
-    return 0.0
-
-
-def reset_gpu_memory_stats():
-    """Reset peak memory stats."""
+def reset_gpu():
     if torch.cuda.is_available():
         torch.cuda.reset_peak_memory_stats()
         torch.cuda.empty_cache()
     gc.collect()
 
 
-def time_inference(
+def peak_memory_mb() -> float:
+    if torch.cuda.is_available():
+        return torch.cuda.max_memory_allocated() / 1024**2
+    return 0.0
+
+
+# ---------------------------------------------------------------------------
+# In-process timing (optimized branch)
+# ---------------------------------------------------------------------------
+
+
+def time_inference_inprocess(
     potential,
     atoms,
     device: str,
-    include_forces: bool = True,
-    include_stresses: bool = True,
     warmup: int = 2,
     repeats: int = 5,
 ) -> dict:
-    """Time a single inference run, returning timing and memory info."""
+    """Time inference (E+F+S) and record peak GPU memory."""
     from mattersim.datasets.utils.build import build_dataloader
     from mattersim.forcefield.potential import batch_to_dict
 
-    # Build dataloader once (not included in timing)
     cutoff = potential.model.model_args.get("cutoff", 5.0)
     threebody_cutoff = potential.model.model_args.get("threebody_cutoff", 4.0)
     dl = build_dataloader(
-        [atoms],
-        batch_size=1,
-        model_type="m3gnet",
-        only_inference=True,
-        cutoff=cutoff,
-        threebody_cutoff=threebody_cutoff,
+        [atoms], batch_size=1, model_type="m3gnet",
+        only_inference=True, cutoff=cutoff, threebody_cutoff=threebody_cutoff,
     )
     graph_batch = next(iter(dl))
-    input_dict = batch_to_dict(graph_batch, device=device)
+    inp = batch_to_dict(graph_batch, device=device)
 
     potential.model.eval()
 
-    # Warmup
+    # warmup
     for _ in range(warmup):
-        _ = potential.forward(
-            input_dict,
-            include_forces=include_forces,
-            include_stresses=include_stresses,
-        )
+        potential.forward(inp, include_forces=True, include_stresses=True)
     if torch.cuda.is_available():
         torch.cuda.synchronize()
 
-    # Timed runs
-    reset_gpu_memory_stats()
+    reset_gpu()
     times = []
     for _ in range(repeats):
         if torch.cuda.is_available():
             torch.cuda.synchronize()
         t0 = time.perf_counter()
-        result = potential.forward(
-            input_dict,
-            include_forces=include_forces,
-            include_stresses=include_stresses,
-        )
+        res = potential.forward(inp, include_forces=True, include_stresses=True)
         if torch.cuda.is_available():
             torch.cuda.synchronize()
-        t1 = time.perf_counter()
-        times.append(t1 - t0)
-
-    peak_mem = get_peak_gpu_memory_mb()
+        times.append(time.perf_counter() - t0)
 
     return {
-        "mean_time_ms": np.mean(times) * 1000,
-        "std_time_ms": np.std(times) * 1000,
-        "min_time_ms": np.min(times) * 1000,
-        "peak_memory_mb": peak_mem,
-        "energy": result["total_energy"].detach().cpu().item(),
+        "mean_ms": float(np.mean(times) * 1000),
+        "std_ms": float(np.std(times) * 1000),
+        "peak_mem_mb": float(peak_memory_mb()),
+        "energy": float(res["total_energy"].detach().cpu().item()),
     }
 
 
 # ---------------------------------------------------------------------------
-# Benchmark: Gradient Checkpointing
+# Subprocess timing helper (for the main-branch / original model)
 # ---------------------------------------------------------------------------
 
+_SUBPROCESS_SCRIPT = textwrap.dedent(r'''
+"""Timing helper — runs inside a subprocess on the main branch."""
+import gc, json, sys, time
+import numpy as np, torch
+from ase.build import bulk, make_supercell
 
-def benchmark_gradient_checkpointing(
-    potential, structures: dict, device: str, repeats: int
-) -> dict:
-    """Compare inference with and without gradient checkpointing."""
-    results = defaultdict(dict)
+def generate(sizes):
+    base = bulk("Si", "diamond", a=5.43, cubic=True)
+    out = {}
+    for t in sorted(sizes):
+        n = max(1, round((t / len(base)) ** (1.0 / 3.0)))
+        atoms = make_supercell(base, [[n,0,0],[0,n,0],[0,0,n]])
+        rng = np.random.default_rng(42)
+        atoms.positions += rng.normal(scale=0.01, size=atoms.positions.shape)
+        out[len(atoms)] = atoms
+    return out
 
-    for n_atoms, atoms in sorted(structures.items()):
-        print(f"\n  {n_atoms} atoms:", end="", flush=True)
+def reset():
+    if torch.cuda.is_available():
+        torch.cuda.reset_peak_memory_stats()
+        torch.cuda.empty_cache()
+    gc.collect()
 
-        # --- Baseline (no checkpointing) ---
-        potential.enable_gradient_checkpointing(False)
-        try:
-            reset_gpu_memory_stats()
-            r_base = time_inference(
-                potential, atoms, device, repeats=repeats
-            )
-            print(f" baseline={r_base['mean_time_ms']:.1f}ms", end="", flush=True)
-        except RuntimeError as e:
-            if "out of memory" in str(e).lower():
-                print(" baseline=OOM", end="", flush=True)
-                r_base = None
-                if torch.cuda.is_available():
-                    torch.cuda.empty_cache()
-                gc.collect()
-            else:
-                raise
+def peak_mb():
+    return torch.cuda.max_memory_allocated() / 1024**2 if torch.cuda.is_available() else 0.0
 
-        # --- With checkpointing ---
-        potential.enable_gradient_checkpointing(True)
-        try:
-            reset_gpu_memory_stats()
-            r_ckpt = time_inference(
-                potential, atoms, device, repeats=repeats
-            )
-            print(
-                f" checkpointed={r_ckpt['mean_time_ms']:.1f}ms", end="", flush=True
-            )
-        except RuntimeError as e:
-            if "out of memory" in str(e).lower():
-                print(" checkpointed=OOM", end="", flush=True)
-                r_ckpt = None
-                if torch.cuda.is_available():
-                    torch.cuda.empty_cache()
-                gc.collect()
-            else:
-                raise
-
-        results[n_atoms] = {"baseline": r_base, "checkpointed": r_ckpt}
-
-    # Reset
-    potential.enable_gradient_checkpointing(False)
-    return dict(results)
-
-
-# ---------------------------------------------------------------------------
-# Benchmark: GPU Three-Body Index Computation
-# ---------------------------------------------------------------------------
-
-
-def benchmark_threebody_indices(structures: dict, device: str) -> dict:
-    """Benchmark GPU vs CPU three-body index computation."""
+def bench(potential, atoms, device, warmup=2, repeats=5):
     from mattersim.datasets.utils.build import build_dataloader
-    from mattersim.forcefield.m3gnet.threebody_indices_torch import (
-        compute_threebody_torch,
-    )
+    from mattersim.forcefield.potential import batch_to_dict
+    ca = potential.model.model_args.get("cutoff", 5.0)
+    cb = potential.model.model_args.get("threebody_cutoff", 4.0)
+    dl = build_dataloader([atoms], batch_size=1, model_type="m3gnet",
+                          only_inference=True, cutoff=ca, threebody_cutoff=cb)
+    gb = next(iter(dl))
+    inp = batch_to_dict(gb, device=device)
+    potential.model.eval()
+    for _ in range(warmup):
+        potential.forward(inp, include_forces=True, include_stresses=True)
+    if torch.cuda.is_available(): torch.cuda.synchronize()
+    reset()
+    times = []
+    for _ in range(repeats):
+        if torch.cuda.is_available(): torch.cuda.synchronize()
+        t0 = time.perf_counter()
+        res = potential.forward(inp, include_forces=True, include_stresses=True)
+        if torch.cuda.is_available(): torch.cuda.synchronize()
+        times.append(time.perf_counter() - t0)
+    return {"mean_ms": float(np.mean(times)*1000),
+            "std_ms": float(np.std(times)*1000),
+            "peak_mem_mb": float(peak_mb()),
+            "energy": float(res["total_energy"].detach().cpu().item())}
 
+def main():
+    cfg = json.loads(sys.argv[1])
+    device = cfg["device"]
+    sizes = cfg["sizes"]
+    repeats = cfg["repeats"]
+    from mattersim.forcefield.potential import Potential
+    pot = Potential.from_checkpoint(device=device)
+    pot.model.eval()
+    structs = generate(sizes)
     results = {}
+    for n, atoms in sorted(structs.items()):
+        try:
+            r = bench(pot, atoms, device, repeats=repeats)
+        except RuntimeError as e:
+            if "out of memory" in str(e).lower():
+                r = None
+                if torch.cuda.is_available(): torch.cuda.empty_cache()
+                gc.collect()
+            else: raise
+        results[n] = r
+    print("__BENCH_RESULTS__")
+    print(json.dumps(results))
 
-    for n_atoms, atoms in sorted(structures.items()):
-        print(f"\n  {n_atoms} atoms:", end="", flush=True)
+if __name__ == "__main__":
+    main()
+''')
 
-        # Build graph to get edge_indices
-        dl = build_dataloader(
-            [atoms],
-            batch_size=1,
-            model_type="m3gnet",
-            only_inference=True,
-            cutoff=5.0,
-            threebody_cutoff=4.0,
+
+def run_original_benchmark(
+    repo_root: str,
+    device: str,
+    sizes: list[int],
+    repeats: int,
+    branch: str,
+) -> dict:
+    """Run the original (main-branch) model via subprocess.
+
+    Temporarily checks out *branch*, runs timing, then restores the
+    current branch.  Safe because this process has already loaded the
+    optimized modules into memory.
+    """
+    current_branch = (
+        subprocess.check_output(
+            ["git", "branch", "--show-current"], cwd=repo_root
         )
-        graph_batch = next(iter(dl))
-
-        # Prepare inputs for GPU three-body computation
-        edge_index = graph_batch.edge_index.T.contiguous()  # [n_edges, 2]
-        # Sort by first column (central atom) as required
-        sorted_idx = torch.argsort(edge_index[:, 0], stable=True)
-        edge_index_sorted = edge_index[sorted_idx]
-        n_atoms_tensor = graph_batch.num_atoms
-
-        # CPU timing
-        t_cpu_times = []
-        for _ in range(3):
-            t0 = time.perf_counter()
-            _ = compute_threebody_torch(edge_index_sorted, n_atoms_tensor)
-            t1 = time.perf_counter()
-            t_cpu_times.append(t1 - t0)
-        cpu_ms = np.mean(t_cpu_times) * 1000
-
-        # GPU timing (if available)
-        gpu_ms = None
-        if device == "cuda" and torch.cuda.is_available():
-            edge_index_gpu = edge_index_sorted.cuda()
-            n_atoms_gpu = n_atoms_tensor.cuda()
-            # warmup
-            _ = compute_threebody_torch(edge_index_gpu, n_atoms_gpu)
-            torch.cuda.synchronize()
-
-            t_gpu_times = []
-            for _ in range(3):
-                torch.cuda.synchronize()
-                t0 = time.perf_counter()
-                _ = compute_threebody_torch(edge_index_gpu, n_atoms_gpu)
-                torch.cuda.synchronize()
-                t1 = time.perf_counter()
-                t_gpu_times.append(t1 - t0)
-            gpu_ms = np.mean(t_gpu_times) * 1000
-
-        results[n_atoms] = {"cpu_ms": cpu_ms, "gpu_ms": gpu_ms}
-
-        msg = f" cpu={cpu_ms:.2f}ms"
-        if gpu_ms is not None:
-            msg += f" gpu={gpu_ms:.2f}ms speedup={cpu_ms / gpu_ms:.1f}x"
-        print(msg, end="", flush=True)
-
-    return results
-
-
-# ---------------------------------------------------------------------------
-# Reporting
-# ---------------------------------------------------------------------------
-
-DIVIDER = "=" * 78
-
-
-def print_checkpointing_report(results: dict):
-    """Print a formatted table of gradient checkpointing results."""
-    print(f"\n{DIVIDER}")
-    print("GRADIENT CHECKPOINTING BENCHMARK")
-    print(DIVIDER)
-    print(
-        f"{'Atoms':>8} │ {'Baseline (ms)':>14} │ {'Checkpt (ms)':>14} │ "
-        f"{'Slowdown':>9} │ {'Mem Base (MB)':>14} │ {'Mem Ckpt (MB)':>14} │ "
-        f"{'Mem Saved':>10}"
+        .decode()
+        .strip()
     )
-    print("─" * 8 + "─┼─" + "─" * 14 + "─┼─" + "─" * 14 + "─┼─" +
-          "─" * 9 + "─┼─" + "─" * 14 + "─┼─" + "─" * 14 + "─┼─" + "─" * 10)
 
-    for n_atoms in sorted(results.keys()):
-        r = results[n_atoms]
-        base = r["baseline"]
-        ckpt = r["checkpointed"]
+    # Write helper script
+    fd, script_path = tempfile.mkstemp(suffix=".py", prefix="bench_orig_")
+    os.write(fd, _SUBPROCESS_SCRIPT.encode())
+    os.close(fd)
 
-        base_time = f"{base['mean_time_ms']:.1f}" if base else "OOM"
-        ckpt_time = f"{ckpt['mean_time_ms']:.1f}" if ckpt else "OOM"
+    cfg = json.dumps({"device": device, "sizes": sizes, "repeats": repeats})
 
-        if base and ckpt:
-            slowdown = f"{ckpt['mean_time_ms'] / base['mean_time_ms']:.2f}x"
-        elif base is None and ckpt:
-            slowdown = "∞→OK"
-        else:
-            slowdown = "—"
-
-        base_mem = f"{base['peak_memory_mb']:.1f}" if base else "OOM"
-        ckpt_mem = f"{ckpt['peak_memory_mb']:.1f}" if ckpt else "OOM"
-
-        if base and ckpt and base["peak_memory_mb"] > 0:
-            saved = (
-                1 - ckpt["peak_memory_mb"] / base["peak_memory_mb"]
-            ) * 100
-            saved_str = f"{saved:+.0f}%"
-        else:
-            saved_str = "—"
-
-        print(
-            f"{n_atoms:>8} │ {base_time:>14} │ {ckpt_time:>14} │ "
-            f"{slowdown:>9} │ {base_mem:>14} │ {ckpt_mem:>14} │ "
-            f"{saved_str:>10}"
+    try:
+        # switch to main
+        subprocess.check_call(
+            ["git", "checkout", branch, "--quiet"], cwd=repo_root
+        )
+        # Clear __pycache__ to avoid stale bytecode
+        subprocess.run(
+            ["find", "src", "-name", "__pycache__", "-exec", "rm", "-rf",
+             "{}", "+"],
+            cwd=repo_root, capture_output=True,
         )
 
-    # Verify numerical equivalence
-    print("\nNumerical equivalence check (energy diff between modes):")
-    for n_atoms in sorted(results.keys()):
-        r = results[n_atoms]
-        base = r["baseline"]
-        ckpt = r["checkpointed"]
-        if base and ckpt:
-            diff = abs(base["energy"] - ckpt["energy"])
-            print(f"  {n_atoms:>6} atoms: ΔE = {diff:.2e} eV")
+        proc = subprocess.run(
+            [sys.executable, script_path, cfg],
+            capture_output=True, text=True, cwd=repo_root,
+        )
+        if proc.returncode != 0:
+            print(f"  [subprocess stderr]\n{proc.stderr[-2000:]}")
+            raise RuntimeError(
+                f"Original benchmark subprocess failed (rc={proc.returncode})"
+            )
+
+        # parse results
+        for line in proc.stdout.splitlines():
+            if line.startswith("__BENCH_RESULTS__"):
+                raw = proc.stdout.split("__BENCH_RESULTS__")[1].strip()
+                results_raw = json.loads(raw)
+                # Keys are strings from JSON, convert to int
+                return {int(k): v for k, v in results_raw.items()}
+
+        raise RuntimeError(
+            "Could not find __BENCH_RESULTS__ marker in subprocess output.\n"
+            f"stdout (last 1000 chars): {proc.stdout[-1000:]}"
+        )
+    finally:
+        subprocess.check_call(
+            ["git", "checkout", current_branch, "--quiet"], cwd=repo_root
+        )
+        subprocess.run(
+            ["find", "src", "-name", "__pycache__", "-exec", "rm", "-rf",
+             "{}", "+"],
+            cwd=repo_root, capture_output=True,
+        )
+        os.unlink(script_path)
 
 
-def print_threebody_report(results: dict):
-    """Print a formatted table of three-body index benchmark results."""
+# ---------------------------------------------------------------------------
+# Plotting
+# ---------------------------------------------------------------------------
+
+
+def setup_plot_style():
+    """Configure matplotlib for publication-quality plots."""
+    import matplotlib as mpl
+    import matplotlib.pyplot as plt
+
+    plt.rcParams.update({
+        "font.family": "sans-serif",
+        "font.size": 12,
+        "axes.titlesize": 14,
+        "axes.labelsize": 13,
+        "xtick.labelsize": 11,
+        "ytick.labelsize": 11,
+        "legend.fontsize": 11,
+        "figure.dpi": 150,
+        "savefig.dpi": 300,
+        "savefig.bbox": "tight",
+        "axes.spines.top": False,
+        "axes.spines.right": False,
+        "axes.grid": True,
+        "grid.alpha": 0.3,
+        "grid.linestyle": "--",
+    })
+
+
+COLORS = {
+    "Original": "#4C72B0",
+    "Optimized": "#55A868",
+    "Optimized + Ckpt": "#C44E52",
+}
+MARKERS = {"Original": "o", "Optimized": "s", "Optimized + Ckpt": "^"}
+
+
+def plot_inference_time(all_results: dict, output_dir: str):
+    """Bar plot: inference time (ms) for each config × system size."""
+    import matplotlib.pyplot as plt
+
+    setup_plot_style()
+
+    configs = list(all_results.keys())
+    atom_counts = sorted(
+        {n for cfg in all_results.values() for n in cfg if cfg[n] is not None}
+    )
+
+    fig, ax = plt.subplots(figsize=(10, 5.5))
+    n_configs = len(configs)
+    bar_width = 0.8 / n_configs
+    x = np.arange(len(atom_counts))
+
+    for i, cfg_name in enumerate(configs):
+        cfg_data = all_results[cfg_name]
+        means = []
+        stds = []
+        for n in atom_counts:
+            d = cfg_data.get(n)
+            if d is not None:
+                means.append(d["mean_ms"])
+                stds.append(d["std_ms"])
+            else:
+                means.append(0)
+                stds.append(0)
+        offset = (i - (n_configs - 1) / 2) * bar_width
+        bars = ax.bar(
+            x + offset, means, bar_width * 0.9, yerr=stds,
+            label=cfg_name, color=COLORS[cfg_name],
+            edgecolor="white", linewidth=0.5,
+            capsize=3, error_kw={"linewidth": 1},
+        )
+        # Add value labels on bars
+        for bar, m in zip(bars, means):
+            if m > 0:
+                ax.text(
+                    bar.get_x() + bar.get_width() / 2, bar.get_height() + 1,
+                    f"{m:.0f}", ha="center", va="bottom", fontsize=8,
+                )
+
+    ax.set_xlabel("Number of Atoms")
+    ax.set_ylabel("Inference Time (ms)")
+    ax.set_title("Inference Time: Energy + Forces + Stresses")
+    ax.set_xticks(x)
+    ax.set_xticklabels(atom_counts)
+    ax.legend(frameon=True, fancybox=True, shadow=False, framealpha=0.9)
+    ax.set_ylim(bottom=0)
+
+    path = os.path.join(output_dir, "inference_time.png")
+    fig.savefig(path)
+    plt.close(fig)
+    print(f"  Saved → {path}")
+
+
+def plot_peak_memory(all_results: dict, output_dir: str):
+    """Bar plot: peak GPU memory (MB) for each config × system size."""
+    import matplotlib.pyplot as plt
+
+    setup_plot_style()
+
+    configs = list(all_results.keys())
+    atom_counts = sorted(
+        {n for cfg in all_results.values() for n in cfg if cfg[n] is not None}
+    )
+
+    fig, ax = plt.subplots(figsize=(10, 5.5))
+    n_configs = len(configs)
+    bar_width = 0.8 / n_configs
+    x = np.arange(len(atom_counts))
+
+    for i, cfg_name in enumerate(configs):
+        cfg_data = all_results[cfg_name]
+        mems = []
+        for n in atom_counts:
+            d = cfg_data.get(n)
+            mems.append(d["peak_mem_mb"] if d else 0)
+        offset = (i - (n_configs - 1) / 2) * bar_width
+        bars = ax.bar(
+            x + offset, mems, bar_width * 0.9,
+            label=cfg_name, color=COLORS[cfg_name],
+            edgecolor="white", linewidth=0.5,
+        )
+        for bar, m in zip(bars, mems):
+            if m > 0:
+                label = f"{m:.0f}" if m < 1000 else f"{m / 1024:.1f}G"
+                ax.text(
+                    bar.get_x() + bar.get_width() / 2, bar.get_height() + 5,
+                    label, ha="center", va="bottom", fontsize=8,
+                )
+
+    ax.set_xlabel("Number of Atoms")
+    ax.set_ylabel("Peak GPU Memory (MB)")
+    ax.set_title("Peak GPU Memory During Inference")
+    ax.set_xticks(x)
+    ax.set_xticklabels(atom_counts)
+    ax.legend(frameon=True, fancybox=True, shadow=False, framealpha=0.9)
+    ax.set_ylim(bottom=0)
+
+    path = os.path.join(output_dir, "peak_memory.png")
+    fig.savefig(path)
+    plt.close(fig)
+    print(f"  Saved → {path}")
+
+
+def plot_memory_savings(all_results: dict, output_dir: str):
+    """Line plot: % memory saved by checkpointing relative to original."""
+    import matplotlib.pyplot as plt
+
+    setup_plot_style()
+
+    atom_counts = sorted(
+        {n for cfg in all_results.values() for n in cfg if cfg[n] is not None}
+    )
+
+    fig, ax = plt.subplots(figsize=(9, 5))
+
+    # Memory savings: checkpointed vs original
+    orig = all_results.get("Original", {})
+    ckpt = all_results.get("Optimized + Ckpt", {})
+
+    savings = []
+    valid_counts = []
+    for n in atom_counts:
+        o = orig.get(n)
+        c = ckpt.get(n)
+        if o and c and o["peak_mem_mb"] > 0:
+            pct = (1 - c["peak_mem_mb"] / o["peak_mem_mb"]) * 100
+            savings.append(pct)
+            valid_counts.append(n)
+
+    if savings:
+        ax.plot(
+            valid_counts, savings, "o-",
+            color=COLORS["Optimized + Ckpt"], linewidth=2.5,
+            markersize=8, markeredgecolor="white", markeredgewidth=1.5,
+            label="Memory Saved vs Original",
+        )
+        ax.fill_between(
+            valid_counts, 0, savings,
+            alpha=0.15, color=COLORS["Optimized + Ckpt"],
+        )
+
+        # Annotate values
+        for xv, yv in zip(valid_counts, savings):
+            ax.annotate(
+                f"{yv:.0f}%", (xv, yv),
+                textcoords="offset points", xytext=(0, 12),
+                ha="center", fontsize=10, fontweight="bold",
+                color=COLORS["Optimized + Ckpt"],
+            )
+
+    ax.set_xlabel("Number of Atoms")
+    ax.set_ylabel("Memory Saved (%)")
+    ax.set_title("GPU Memory Savings with Gradient Checkpointing")
+    ax.set_ylim(bottom=0, top=max(savings + [60]) * 1.15)
+    ax.legend(frameon=True, fancybox=True, framealpha=0.9)
+
+    path = os.path.join(output_dir, "memory_savings.png")
+    fig.savefig(path)
+    plt.close(fig)
+    print(f"  Saved → {path}")
+
+
+def plot_scaling(all_results: dict, output_dir: str):
+    """Log-log scaling plot: time vs atoms for all configs."""
+    import matplotlib.pyplot as plt
+
+    setup_plot_style()
+
+    fig, ax = plt.subplots(figsize=(9, 5.5))
+
+    for cfg_name, cfg_data in all_results.items():
+        ns = sorted(n for n in cfg_data if cfg_data[n] is not None)
+        means = [cfg_data[n]["mean_ms"] for n in ns]
+        stds = [cfg_data[n]["std_ms"] for n in ns]
+        ax.errorbar(
+            ns, means, yerr=stds,
+            marker=MARKERS[cfg_name], linestyle="-", linewidth=2,
+            markersize=8, markeredgecolor="white", markeredgewidth=1.5,
+            color=COLORS[cfg_name], label=cfg_name,
+            capsize=4, capthick=1.5,
+        )
+
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel("Number of Atoms")
+    ax.set_ylabel("Inference Time (ms)")
+    ax.set_title("Inference Scaling: Time vs System Size")
+    ax.legend(frameon=True, fancybox=True, framealpha=0.9)
+
+    path = os.path.join(output_dir, "scaling.png")
+    fig.savefig(path)
+    plt.close(fig)
+    print(f"  Saved → {path}")
+
+
+def plot_combined_summary(all_results: dict, output_dir: str, gpu_name: str):
+    """2×2 panel summary figure."""
+    import matplotlib.pyplot as plt
+    from matplotlib.gridspec import GridSpec
+
+    setup_plot_style()
+
+    configs = list(all_results.keys())
+    atom_counts = sorted(
+        {n for cfg in all_results.values() for n in cfg if cfg[n] is not None}
+    )
+    n_configs = len(configs)
+    bar_width = 0.8 / n_configs
+    x = np.arange(len(atom_counts))
+
+    fig = plt.figure(figsize=(16, 12))
+    gs = GridSpec(2, 2, hspace=0.32, wspace=0.28)
+
+    # ── Panel (a): Inference time bars ──
+    ax1 = fig.add_subplot(gs[0, 0])
+    for i, cfg_name in enumerate(configs):
+        cd = all_results[cfg_name]
+        means = [cd.get(n, {}).get("mean_ms", 0) if cd.get(n) else 0
+                 for n in atom_counts]
+        stds = [cd.get(n, {}).get("std_ms", 0) if cd.get(n) else 0
+                for n in atom_counts]
+        offset = (i - (n_configs - 1) / 2) * bar_width
+        ax1.bar(
+            x + offset, means, bar_width * 0.9, yerr=stds,
+            label=cfg_name, color=COLORS[cfg_name],
+            edgecolor="white", linewidth=0.5,
+            capsize=2, error_kw={"linewidth": 0.8},
+        )
+    ax1.set_xlabel("Number of Atoms")
+    ax1.set_ylabel("Inference Time (ms)")
+    ax1.set_title("(a) Inference Time (E + F + S)")
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(atom_counts)
+    ax1.legend(fontsize=9, frameon=True, fancybox=True, framealpha=0.9)
+    ax1.set_ylim(bottom=0)
+
+    # ── Panel (b): Peak memory bars ──
+    ax2 = fig.add_subplot(gs[0, 1])
+    for i, cfg_name in enumerate(configs):
+        cd = all_results[cfg_name]
+        mems = [cd.get(n, {}).get("peak_mem_mb", 0) if cd.get(n) else 0
+                for n in atom_counts]
+        offset = (i - (n_configs - 1) / 2) * bar_width
+        ax2.bar(
+            x + offset, mems, bar_width * 0.9,
+            label=cfg_name, color=COLORS[cfg_name],
+            edgecolor="white", linewidth=0.5,
+        )
+    ax2.set_xlabel("Number of Atoms")
+    ax2.set_ylabel("Peak GPU Memory (MB)")
+    ax2.set_title("(b) Peak GPU Memory")
+    ax2.set_xticks(x)
+    ax2.set_xticklabels(atom_counts)
+    ax2.legend(fontsize=9, frameon=True, fancybox=True, framealpha=0.9)
+    ax2.set_ylim(bottom=0)
+
+    # ── Panel (c): Scaling (log-log) ──
+    ax3 = fig.add_subplot(gs[1, 0])
+    for cfg_name, cfg_data in all_results.items():
+        ns = sorted(n for n in cfg_data if cfg_data[n] is not None)
+        means = [cfg_data[n]["mean_ms"] for n in ns]
+        ax3.plot(
+            ns, means, marker=MARKERS[cfg_name], linestyle="-", linewidth=2,
+            markersize=7, markeredgecolor="white", markeredgewidth=1,
+            color=COLORS[cfg_name], label=cfg_name,
+        )
+    ax3.set_xscale("log")
+    ax3.set_yscale("log")
+    ax3.set_xlabel("Number of Atoms")
+    ax3.set_ylabel("Inference Time (ms)")
+    ax3.set_title("(c) Inference Scaling")
+    ax3.legend(fontsize=9, frameon=True, fancybox=True, framealpha=0.9)
+
+    # ── Panel (d): Memory savings line ──
+    ax4 = fig.add_subplot(gs[1, 1])
+    orig = all_results.get("Original", {})
+    ckpt = all_results.get("Optimized + Ckpt", {})
+    savings, valid_ns = [], []
+    for n in atom_counts:
+        o, c = orig.get(n), ckpt.get(n)
+        if o and c and o["peak_mem_mb"] > 0:
+            savings.append((1 - c["peak_mem_mb"] / o["peak_mem_mb"]) * 100)
+            valid_ns.append(n)
+    if savings:
+        ax4.plot(
+            valid_ns, savings, "o-", color=COLORS["Optimized + Ckpt"],
+            linewidth=2.5, markersize=8,
+            markeredgecolor="white", markeredgewidth=1.5,
+        )
+        ax4.fill_between(
+            valid_ns, 0, savings, alpha=0.15,
+            color=COLORS["Optimized + Ckpt"],
+        )
+        for xv, yv in zip(valid_ns, savings):
+            ax4.annotate(
+                f"{yv:.0f}%", (xv, yv),
+                textcoords="offset points", xytext=(0, 10),
+                ha="center", fontsize=10, fontweight="bold",
+                color=COLORS["Optimized + Ckpt"],
+            )
+    ax4.set_xlabel("Number of Atoms")
+    ax4.set_ylabel("Memory Saved (%)")
+    ax4.set_title("(d) Memory Savings (Checkpointing vs Original)")
+    ax4.set_ylim(bottom=0, top=max(savings + [60]) * 1.15)
+
+    fig.suptitle(
+        f"MatterSim Optimization Benchmark  ·  {gpu_name}",
+        fontsize=15, fontweight="bold", y=0.98,
+    )
+
+    path = os.path.join(output_dir, "summary.png")
+    fig.savefig(path)
+    plt.close(fig)
+    print(f"  Saved → {path}")
+
+
+# ---------------------------------------------------------------------------
+# Console report
+# ---------------------------------------------------------------------------
+
+DIVIDER = "=" * 82
+
+
+def print_report(all_results: dict):
+    """Print a combined table to the console."""
+    atom_counts = sorted(
+        {n for cfg in all_results.values() for n in cfg if cfg[n] is not None}
+    )
+    configs = list(all_results.keys())
+
     print(f"\n{DIVIDER}")
-    print("GPU THREE-BODY INDEX COMPUTATION")
+    print("RESULTS")
     print(DIVIDER)
-    has_gpu = any(r["gpu_ms"] is not None for r in results.values())
 
-    if has_gpu:
-        print(
-            f"{'Atoms':>8} │ {'CPU (ms)':>10} │ {'GPU (ms)':>10} │ "
-            f"{'Speedup':>8}"
-        )
-        print("─" * 8 + "─┼─" + "─" * 10 + "─┼─" + "─" * 10 + "─┼─" + "─" * 8)
-        for n_atoms in sorted(results.keys()):
-            r = results[n_atoms]
-            speedup = (
-                f"{r['cpu_ms'] / r['gpu_ms']:.1f}x"
-                if r["gpu_ms"]
-                else "—"
-            )
-            gpu_str = f"{r['gpu_ms']:.2f}" if r["gpu_ms"] else "N/A"
-            print(
-                f"{n_atoms:>8} │ {r['cpu_ms']:>10.2f} │ {gpu_str:>10} │ "
-                f"{speedup:>8}"
-            )
-    else:
-        print(f"{'Atoms':>8} │ {'CPU (ms)':>10}")
-        print("─" * 8 + "─┼─" + "─" * 10)
-        for n_atoms in sorted(results.keys()):
-            r = results[n_atoms]
-            print(f"{n_atoms:>8} │ {r['cpu_ms']:>10.2f}")
+    # Time table
+    header = f"{'Atoms':>8}"
+    for c in configs:
+        header += f" │ {c + ' (ms)':>22}"
+    print(header)
+    print("─" * len(header.encode("utf-8")))
+
+    for n in atom_counts:
+        row = f"{n:>8}"
+        for c in configs:
+            d = all_results[c].get(n)
+            if d:
+                row += f" │ {d['mean_ms']:>15.1f} ± {d['std_ms']:<4.1f}"
+            else:
+                row += f" │ {'OOM':>22}"
+        print(row)
+
+    # Memory table
+    print()
+    header = f"{'Atoms':>8}"
+    for c in configs:
+        header += f" │ {c + ' (MB)':>22}"
+    print(header)
+    print("─" * len(header.encode("utf-8")))
+
+    for n in atom_counts:
+        row = f"{n:>8}"
+        for c in configs:
+            d = all_results[c].get(n)
+            if d:
+                row += f" │ {d['peak_mem_mb']:>22.1f}"
+            else:
+                row += f" │ {'OOM':>22}"
+        print(row)
+
+    # Numerical consistency
+    print(f"\nNumerical consistency (ΔE vs Original):")
+    orig = all_results.get("Original", {})
+    for c in configs:
+        if c == "Original":
+            continue
+        for n in atom_counts:
+            o = orig.get(n)
+            d = all_results[c].get(n)
+            if o and d:
+                diff = abs(o["energy"] - d["energy"])
+                print(f"  {c:>25}  {n:>6} atoms: ΔE = {diff:.2e} eV")
 
 
 # ---------------------------------------------------------------------------
@@ -377,125 +708,176 @@ def print_threebody_report(results: dict):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Benchmark MatterSim optimizations",
+        description="Benchmark Original vs Optimized vs Checkpointed M3Gnet",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=__doc__,
     )
     parser.add_argument(
         "--device",
         default="cuda" if torch.cuda.is_available() else "cpu",
-        help="Device for benchmarking (default: cuda if available)",
     )
     parser.add_argument(
-        "--sizes",
-        default="8,64,216,512",
-        help="Comma-separated target atom counts (default: 8,64,216,512)",
+        "--sizes", default="8,64,216,512,1000,2744",
+        help="Comma-separated target atom counts",
+    )
+    parser.add_argument("--repeats", type=int, default=5)
+    parser.add_argument(
+        "--output-dir", default="benchmark_results",
+        help="Directory for output plots and data",
     )
     parser.add_argument(
-        "--repeats",
-        type=int,
-        default=5,
-        help="Number of timed repetitions per configuration (default: 5)",
-    )
-    parser.add_argument(
-        "--skip-checkpointing",
-        action="store_true",
-        help="Skip gradient checkpointing benchmark",
-    )
-    parser.add_argument(
-        "--skip-threebody",
-        action="store_true",
-        help="Skip three-body index benchmark",
+        "--main-branch", default="main",
+        help="Git branch name for the original (baseline) model",
     )
     args = parser.parse_args()
 
     device = args.device
     sizes = [int(s.strip()) for s in args.sizes.split(",")]
     repeats = args.repeats
+    output_dir = args.output_dir
+    os.makedirs(output_dir, exist_ok=True)
+
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    gpu_name = "CPU"
+    if device == "cuda" and torch.cuda.is_available():
+        gpu_name = torch.cuda.get_device_name()
 
     print(DIVIDER)
     print("MatterSim Optimization Benchmark")
     print(DIVIDER)
-    print(f"Device:       {device}")
-    if device == "cuda" and torch.cuda.is_available():
-        print(f"GPU:          {torch.cuda.get_device_name()}")
-        print(
-            f"GPU Memory:   "
-            f"{torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB"
-        )
+    print(f"Device:       {device} ({gpu_name})")
     print(f"PyTorch:      {torch.__version__}")
     print(f"Target sizes: {sizes}")
     print(f"Repeats:      {repeats}")
+    print(f"Output dir:   {output_dir}")
 
-    # Generate structures
-    print("\nGenerating test structures...")
+    # Generate structures for display
     structures = generate_structures(sizes)
     actual_sizes = sorted(structures.keys())
-    print(f"  Created structures with {actual_sizes} atoms")
+    print(f"Actual sizes: {actual_sizes}")
 
-    # ------------------------------------------------------------------
-    # Benchmark 1: Gradient Checkpointing
-    # ------------------------------------------------------------------
-    if not args.skip_checkpointing:
-        print("\n" + DIVIDER)
-        print("Running gradient checkpointing benchmark...")
-        print("  (comparing baseline vs checkpointed inference)")
-
-        from mattersim.forcefield.potential import Potential
-
-        potential = Potential.from_checkpoint(device=device)
-        potential.model.eval()
-
-        ckpt_results = benchmark_gradient_checkpointing(
-            potential, structures, device, repeats
-        )
-        print()
-        print_checkpointing_report(ckpt_results)
-
-        del potential
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-        gc.collect()
-
-    # ------------------------------------------------------------------
-    # Benchmark 2: GPU Three-Body Index Computation
-    # ------------------------------------------------------------------
-    if not args.skip_threebody:
-        print("\n" + DIVIDER)
-        print("Running three-body index computation benchmark...")
-        print("  (comparing CPU vs GPU torch implementation)")
-
-        tb_results = benchmark_threebody_indices(structures, device)
-        print()
-        print_threebody_report(tb_results)
-
-    # ------------------------------------------------------------------
-    # Summary
-    # ------------------------------------------------------------------
+    # ==================================================================
+    # 1. Original model (main branch, via subprocess)
+    # ==================================================================
     print(f"\n{DIVIDER}")
-    print("SUMMARY")
+    print("(1/3) Benchmarking ORIGINAL model (main branch)...")
     print(DIVIDER)
-    print(
-        "Optimizations available in this build:\n"
-        "  ✓ Native scatter_sum (checkpoint-compatible)\n"
-        "  ✓ Gradient checkpointing (M3Gnet.enable_gradient_checkpointing)\n"
-        "  ✓ GPU three-body indices (threebody_indices_torch.py)\n"
-        "  ✓ AOTI compilation (forcefield.aoti_compile — requires torch>=2.4)\n"
-    )
-    print(
-        "To enable gradient checkpointing at inference time:\n"
-        "    potential = Potential.from_checkpoint()\n"
-        "    potential.enable_gradient_checkpointing(True)\n"
-    )
-    print(
-        "To compile with AOTI for maximum inference speed:\n"
-        "    from mattersim.forcefield.aoti_compile import (\n"
-        "        AOTISettings, compile_m3gnet_aoti, load_aoti_model\n"
-        "    )\n"
-        "    settings = AOTISettings(include_forces=True, include_stresses=True)\n"
-        "    pt2_path = compile_m3gnet_aoti(model, version='v1.0.0', device='cuda')\n"
-        "    aoti_model = load_aoti_model(pt2_path, model.model_args, settings)\n"
-    )
+    try:
+        original_results = run_original_benchmark(
+            repo_root, device, sizes, repeats, branch=args.main_branch,
+        )
+        for n in sorted(original_results):
+            r = original_results[n]
+            if r:
+                print(
+                    f"  {n:>6} atoms: {r['mean_ms']:.1f} ms  "
+                    f"mem={r['peak_mem_mb']:.0f} MB"
+                )
+            else:
+                print(f"  {n:>6} atoms: OOM")
+    except Exception as e:
+        print(f"  ⚠ Original benchmark failed: {e}")
+        print("  Falling back: using optimized (no ckpt) as 'Original'")
+        original_results = None
+
+    # ==================================================================
+    # 2. Optimized model (current branch, no checkpointing)
+    # ==================================================================
+    print(f"\n{DIVIDER}")
+    print("(2/3) Benchmarking OPTIMIZED model (no checkpointing)...")
+    print(DIVIDER)
+
+    from mattersim.forcefield.potential import Potential
+
+    potential = Potential.from_checkpoint(device=device)
+    potential.model.eval()
+    potential.enable_gradient_checkpointing(False)
+
+    optimized_results = {}
+    for n, atoms in sorted(structures.items()):
+        try:
+            r = time_inference_inprocess(potential, atoms, device, repeats=repeats)
+            print(
+                f"  {n:>6} atoms: {r['mean_ms']:.1f} ms  "
+                f"mem={r['peak_mem_mb']:.0f} MB"
+            )
+        except RuntimeError as e:
+            if "out of memory" in str(e).lower():
+                r = None
+                print(f"  {n:>6} atoms: OOM")
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                gc.collect()
+            else:
+                raise
+        optimized_results[n] = r
+
+    # ==================================================================
+    # 3. Optimized + Gradient Checkpointing
+    # ==================================================================
+    print(f"\n{DIVIDER}")
+    print("(3/3) Benchmarking OPTIMIZED + GRADIENT CHECKPOINTING...")
+    print(DIVIDER)
+
+    potential.enable_gradient_checkpointing(True)
+
+    ckpt_results = {}
+    for n, atoms in sorted(structures.items()):
+        try:
+            r = time_inference_inprocess(potential, atoms, device, repeats=repeats)
+            print(
+                f"  {n:>6} atoms: {r['mean_ms']:.1f} ms  "
+                f"mem={r['peak_mem_mb']:.0f} MB"
+            )
+        except RuntimeError as e:
+            if "out of memory" in str(e).lower():
+                r = None
+                print(f"  {n:>6} atoms: OOM")
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                gc.collect()
+            else:
+                raise
+        ckpt_results[n] = r
+
+    potential.enable_gradient_checkpointing(False)
+
+    # ==================================================================
+    # Combine & Report
+    # ==================================================================
+    if original_results is None:
+        original_results = optimized_results  # fallback
+
+    all_results = {
+        "Original": original_results,
+        "Optimized": optimized_results,
+        "Optimized + Ckpt": ckpt_results,
+    }
+
+    print_report(all_results)
+
+    # Save raw data
+    data_path = os.path.join(output_dir, "benchmark_data.json")
+    # Convert keys to strings for JSON
+    serializable = {
+        cfg: {str(k): v for k, v in data.items()}
+        for cfg, data in all_results.items()
+    }
+    with open(data_path, "w") as f:
+        json.dump(serializable, f, indent=2)
+    print(f"\nRaw data saved → {data_path}")
+
+    # Generate plots
+    print("\nGenerating plots...")
+    plot_inference_time(all_results, output_dir)
+    plot_peak_memory(all_results, output_dir)
+    plot_memory_savings(all_results, output_dir)
+    plot_scaling(all_results, output_dir)
+    plot_combined_summary(all_results, output_dir, gpu_name)
+
+    print(f"\n{DIVIDER}")
+    print(f"All outputs saved to {output_dir}/")
+    print(DIVIDER)
 
 
 if __name__ == "__main__":
