@@ -143,65 +143,20 @@ def benchmark_graph_construction(
 ) -> dict:
     """Benchmark graph construction: CPU 1-by-1, GPU 1-by-1, GPU batched per bin.
 
-    Structures are grouped into log-spaced atom-count bins. Each mode is timed
-    per bin so that GPU batched timings are directly comparable at each size.
+    For each atom-count bin, structures are replicated to ≥200 so that actual
+    GPU compute dominates over kernel launch overhead. All 3 methods are timed
+    on the same replicated set for fair comparison.
 
-    Returns dict with per-structure records, per-bin summaries, and totals.
+    Returns dict with per-bin summaries and totals.
     """
     from mattersim.datasets.utils.build import build_dataloader
 
-    per_structure = []  # per-structure CPU vs GPU-1by1 timings
-
-    # ── 1) CPU one-by-one ──
-    print("\n  [1/3] CPU one-by-one...")
-    cpu_total_t0 = time.perf_counter()
-    for i, atoms in enumerate(atoms_list):
-        record = {"n_atoms": len(atoms), "index": i}
-        try:
-            t0 = time.perf_counter()
-            dl = build_dataloader(
-                [atoms], batch_size=1, model_type="m3gnet",
-                only_inference=True, cutoff=cutoff,
-                threebody_cutoff=threebody_cutoff, batch_converter=False,
-            )
-            t1 = time.perf_counter()
-            record["cpu_ms"] = (t1 - t0) * 1000
-        except Exception as e:
-            record["cpu_ms"] = None
-            record["cpu_error"] = str(e)
-        per_structure.append(record)
-        if (i + 1) % 200 == 0:
-            print(f"    {i+1}/{len(atoms_list)}", flush=True)
-    cpu_total_ms = (time.perf_counter() - cpu_total_t0) * 1000
-
-    # ── 2) GPU one-by-one ──
-    print("  [2/3] GPU one-by-one...")
-    if torch.cuda.is_available():
-        torch.cuda.synchronize()
-    gpu1by1_total_t0 = time.perf_counter()
-    for i, atoms in enumerate(atoms_list):
-        try:
-            t0 = time.perf_counter()
-            dl = build_dataloader(
-                [atoms], batch_size=1, model_type="m3gnet",
-                only_inference=True, cutoff=cutoff,
-                threebody_cutoff=threebody_cutoff, batch_converter=True,
-            )
-            if torch.cuda.is_available():
-                torch.cuda.synchronize()
-            t1 = time.perf_counter()
-            per_structure[i]["gpu_1by1_ms"] = (t1 - t0) * 1000
-        except Exception as e:
-            per_structure[i]["gpu_1by1_ms"] = None
-            per_structure[i]["gpu_1by1_error"] = str(e)
-        if (i + 1) % 200 == 0:
-            print(f"    {i+1}/{len(atoms_list)}", flush=True)
-    if torch.cuda.is_available():
-        torch.cuda.synchronize()
-    gpu1by1_total_ms = (time.perf_counter() - gpu1by1_total_t0) * 1000
-
-    # ── 3) GPU batched — per atom-count bin ──
-    print("  [3/3] GPU batched (per atom-count bin)...")
+    # ── Per atom-count bin benchmarks ──
+    # Replicate each bin to a target count so GPU compute (not launch overhead)
+    # dominates the measurement.
+    min_structs_per_bin = 200
+    print(f"  [3/3] GPU batched (per atom-count bin, "
+          f"min {min_structs_per_bin} structs/bin)...")
     sizes = np.array([len(a) for a in atoms_list])
     lo, hi = sizes.min(), sizes.max()
     bin_edges = np.logspace(np.log10(max(lo, 1)), np.log10(hi), n_bins + 1)
@@ -213,10 +168,16 @@ def benchmark_graph_construction(
         mask = bin_indices == b
         if mask.sum() < 1:
             continue
-        bin_atoms = [atoms_list[j] for j in np.where(mask)[0]]
-        bin_n = len(bin_atoms)
+        bin_atoms_orig = [atoms_list[j] for j in np.where(mask)[0]]
+        bin_n_orig = len(bin_atoms_orig)
         bin_center = float(np.mean(sizes[mask]))
 
+        # Replicate to reach min_structs_per_bin
+        reps = max(1, (min_structs_per_bin + bin_n_orig - 1) // bin_n_orig)
+        bin_atoms = (bin_atoms_orig * reps)[:max(min_structs_per_bin, bin_n_orig)]
+        bin_n = len(bin_atoms)
+
+        # GPU batched timing
         if torch.cuda.is_available():
             torch.cuda.synchronize()
         t0 = time.perf_counter()
@@ -228,51 +189,76 @@ def benchmark_graph_construction(
             )
             if torch.cuda.is_available():
                 torch.cuda.synchronize()
-            bin_gpu_ms = (time.perf_counter() - t0) * 1000
+            bin_gpu_batch_ms = (time.perf_counter() - t0) * 1000
         except Exception as e:
-            bin_gpu_ms = None
+            bin_gpu_batch_ms = None
             print(f"    Bin {b} error: {e}")
 
-        # Also compute CPU and GPU-1by1 aggregate for this bin
-        bin_records = [per_structure[j] for j in np.where(mask)[0]]
-        bin_cpu_ms = sum(
-            r["cpu_ms"] for r in bin_records if r.get("cpu_ms") is not None
-        )
-        bin_gpu1by1_ms = sum(
-            r["gpu_1by1_ms"] for r in bin_records
-            if r.get("gpu_1by1_ms") is not None
-        )
+        # CPU 1-by-1 timing on the same replicated set
+        t0 = time.perf_counter()
+        for atoms in bin_atoms:
+            build_dataloader(
+                [atoms], batch_size=1, model_type="m3gnet",
+                only_inference=True, cutoff=cutoff,
+                threebody_cutoff=threebody_cutoff, batch_converter=False,
+            )
+        bin_cpu_ms = (time.perf_counter() - t0) * 1000
+
+        # GPU 1-by-1 timing on the same replicated set
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
+        t0 = time.perf_counter()
+        for atoms in bin_atoms:
+            build_dataloader(
+                [atoms], batch_size=1, model_type="m3gnet",
+                only_inference=True, cutoff=cutoff,
+                threebody_cutoff=threebody_cutoff, batch_converter=True,
+            )
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
+        bin_gpu1by1_ms = (time.perf_counter() - t0) * 1000
 
         per_bin.append({
             "bin_center": bin_center,
             "count": bin_n,
+            "count_orig": bin_n_orig,
             "cpu_total_ms": bin_cpu_ms,
             "gpu_1by1_total_ms": bin_gpu1by1_ms,
-            "gpu_batch_total_ms": bin_gpu_ms,
+            "gpu_batch_total_ms": bin_gpu_batch_ms,
             "cpu_per_struct_ms": bin_cpu_ms / bin_n if bin_n > 0 else 0,
             "gpu_1by1_per_struct_ms": bin_gpu1by1_ms / bin_n if bin_n > 0 else 0,
             "gpu_batch_per_struct_ms": (
-                bin_gpu_ms / bin_n if bin_gpu_ms is not None and bin_n > 0
+                bin_gpu_batch_ms / bin_n
+                if bin_gpu_batch_ms is not None and bin_n > 0
                 else None
             ),
         })
-        status = f"    Bin ~{int(bin_center)} atoms ({bin_n} structs):"
-        status += f" cpu={bin_cpu_ms:.0f}ms  gpu_1by1={bin_gpu1by1_ms:.0f}ms"
-        if bin_gpu_ms is not None:
-            status += f"  gpu_batch={bin_gpu_ms:.0f}ms"
+        status = (
+            f"    Bin ~{int(bin_center)} atoms "
+            f"({bin_n_orig} orig → {bin_n} structs):"
+        )
+        status += f" cpu={bin_cpu_ms / bin_n:.2f}"
+        status += f"  gpu_1by1={bin_gpu1by1_ms / bin_n:.2f}"
+        if bin_gpu_batch_ms is not None:
+            status += f"  gpu_batch={bin_gpu_batch_ms / bin_n:.2f} ms/struct"
         print(status, flush=True)
 
-    if torch.cuda.is_available():
-        torch.cuda.synchronize()
-    gpu_batch_total_ms = (time.perf_counter() - gpu_batch_total_t0) * 1000
+    # Compute totals from per-bin sums
+    cpu_total_ms = sum(b["cpu_total_ms"] for b in per_bin)
+    gpu1by1_total_ms = sum(b["gpu_1by1_total_ms"] for b in per_bin)
+    gpu_batch_total_ms = sum(
+        b["gpu_batch_total_ms"] for b in per_bin
+        if b.get("gpu_batch_total_ms") is not None
+    )
+    total_structs = sum(b["count"] for b in per_bin)
 
     summary = {
-        "per_structure": per_structure,
         "per_bin": per_bin,
         "cpu_total_ms": cpu_total_ms,
         "gpu_1by1_total_ms": gpu1by1_total_ms,
         "gpu_batch_total_ms": gpu_batch_total_ms,
         "n_structures": len(atoms_list),
+        "n_structures_benchmarked": total_structs,
     }
     return summary
 
@@ -465,51 +451,55 @@ def bin_by_atoms(records, keys, n_bins=12):
 
 
 def plot_graph_scatter(graph_summary, output_path):
-    """Scatter plot: per-structure timings with GPU batched per-bin markers."""
+    """Line plot: per-structure amortized time for all 3 methods per bin."""
     setup_plot_style()
-    records = graph_summary["per_structure"]
     per_bin = graph_summary["per_bin"]
+    if not per_bin:
+        return
 
     fig, axes = plt.subplots(1, 2, figsize=(15, 5.5))
 
-    # Left: timing scatter + batched per-bin markers
+    bc = np.array([b["bin_center"] for b in per_bin])
+    cpu_t = np.array([b["cpu_per_struct_ms"] for b in per_bin])
+    gpu1_t = np.array([b["gpu_1by1_per_struct_ms"] for b in per_bin])
+    gpub_t = np.array([
+        b["gpu_batch_per_struct_ms"] if b.get("gpu_batch_per_struct_ms") else 0
+        for b in per_bin
+    ])
+
+    # Left: timing lines
     ax = axes[0]
-    for key, label in [("cpu_ms", "CPU 1-by-1"), ("gpu_1by1_ms", "GPU 1-by-1")]:
-        valid = [(r["n_atoms"], r[key]) for r in records if r.get(key) is not None]
-        if valid:
-            ns, ts = zip(*valid)
-            ax.scatter(ns, ts, alpha=0.3, s=12, color=COLORS[label],
-                       label=label, edgecolors="none")
-    # GPU batched per-bin as bold markers
-    if per_bin:
-        bc = [b["bin_center"] for b in per_bin if b.get("gpu_batch_per_struct_ms")]
-        bt = [b["gpu_batch_per_struct_ms"] for b in per_bin if b.get("gpu_batch_per_struct_ms")]
-        ax.plot(bc, bt, "^-", color=COLORS["GPU Batched"], linewidth=2.5,
-                markersize=10, markeredgecolor="white", markeredgewidth=1.5,
-                label="GPU Batched", zorder=5)
+    ax.plot(bc, cpu_t, "o-", color=COLORS["CPU 1-by-1"], linewidth=2,
+            markersize=8, markeredgecolor="white", markeredgewidth=1,
+            label="CPU 1-by-1")
+    ax.plot(bc, gpu1_t, "s-", color=COLORS["GPU 1-by-1"], linewidth=2,
+            markersize=8, markeredgecolor="white", markeredgewidth=1,
+            label="GPU 1-by-1")
+    ax.plot(bc, gpub_t, "^-", color=COLORS["GPU Batched"], linewidth=2.5,
+            markersize=9, markeredgecolor="white", markeredgewidth=1.5,
+            label="GPU Batched")
     ax.set_xlabel("Number of Atoms")
     ax.set_ylabel("Graph Construction Time (ms / structure)")
-    ax.set_title("(a) Per-Structure Graph Construction")
+    ax.set_title("(a) Amortized Per-Structure Time")
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.legend(frameon=True, fancybox=True, framealpha=0.9, markerscale=1.5)
+    ax.legend(frameon=True, fancybox=True, framealpha=0.9)
 
-    # Right: speedup scatter + batched speedup line
+    # Right: speedup vs CPU
     ax = axes[1]
-    valid = [r for r in records
-             if r.get("cpu_ms") is not None and r.get("gpu_1by1_ms") is not None]
-    if valid:
-        ns = np.array([r["n_atoms"] for r in valid])
-        sp = np.array([r["cpu_ms"] for r in valid]) / np.maximum(
-            np.array([r["gpu_1by1_ms"] for r in valid]), 1e-6)
-        sc = ax.scatter(ns, sp, c=ns, cmap="viridis", alpha=0.5, s=15,
-                        edgecolors="none")
-        ax.axhline(y=1.0, color="gray", linestyle=":", linewidth=1.5,
-                   label="1× (no speedup)")
-        plt.colorbar(sc, ax=ax, label="Number of Atoms", pad=0.02)
+    sp_1by1 = cpu_t / np.maximum(gpu1_t, 1e-6)
+    sp_batch = np.where(gpub_t > 0, cpu_t / gpub_t, 0)
+    ax.plot(bc, sp_1by1, "s-", color=COLORS["GPU 1-by-1"], linewidth=2,
+            markersize=8, markeredgecolor="white", markeredgewidth=1,
+            label="GPU 1-by-1")
+    ax.plot(bc, sp_batch, "^-", color=COLORS["GPU Batched"], linewidth=2.5,
+            markersize=9, markeredgecolor="white", markeredgewidth=1.5,
+            label="GPU Batched")
+    ax.axhline(y=1.0, color="gray", linestyle=":", linewidth=1.5,
+               label="1× (no speedup)")
     ax.set_xlabel("Number of Atoms")
-    ax.set_ylabel("Speedup (CPU / GPU 1-by-1)")
-    ax.set_title("(b) GPU 1-by-1 Speedup")
+    ax.set_ylabel("Speedup vs CPU 1-by-1")
+    ax.set_title("(b) GPU Speedup by System Size")
     ax.set_xscale("log")
     ax.legend(frameon=True, fancybox=True, framealpha=0.9)
 
@@ -730,92 +720,92 @@ def plot_summary_4panel(graph_summary, inf_summary, output_path, gpu_name):
     setup_plot_style()
     fig, axes = plt.subplots(2, 2, figsize=(16, 12))
 
+    methods = ["CPU\n1-by-1", "GPU\n1-by-1", "GPU\nBatched"]
+    colors = [COLORS["CPU"], COLORS["GPU 1-by-1"], COLORS["GPU Batched"]]
+
     # ── (a) Graph total bar ──
     ax = axes[0, 0]
-    methods = ["CPU\n1-by-1", "GPU\n1-by-1", "GPU\nBatched"]
     g_times = [
         graph_summary["cpu_total_ms"] / 1000,
         graph_summary["gpu_1by1_total_ms"] / 1000,
         (graph_summary["gpu_batch_total_ms"] or 0) / 1000,
     ]
-    colors = [COLORS["CPU"], COLORS["GPU 1-by-1"], COLORS["GPU Batched"]]
     bars = ax.bar(methods, g_times, color=colors, edgecolor="white",
                   linewidth=0.5, width=0.55)
     for bar, t in zip(bars, g_times):
         ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.01,
-                f"{t:.2f}s", ha="center", va="bottom", fontsize=10,
+                f"{t:.1f}s", ha="center", va="bottom", fontsize=10,
                 fontweight="bold")
     ax.set_ylabel("Total Wall Time (s)")
-    ax.set_title("(a) Graph Construction — Total Time")
+    ax.set_title(f"(a) Graph Construction — Total ({graph_summary['n_structures_benchmarked']} structs)")
     ax.set_ylim(bottom=0, top=max(g_times) * 1.25)
 
-    # ── (b) Full inference total bar ──
+    # ── (b) Binned bar chart ──
     ax = axes[0, 1]
-    if inf_summary:
-        i_times = [
-            inf_summary["cpu_total_ms"] / 1000,
-            inf_summary["gpu_1by1_total_ms"] / 1000,
-            (inf_summary["gpu_batch_total_ms"] or 0) / 1000,
-        ]
-        bars = ax.bar(methods, i_times, color=colors, edgecolor="white",
-                      linewidth=0.5, width=0.55)
-        for bar, t in zip(bars, i_times):
-            ax.text(bar.get_x() + bar.get_width() / 2,
-                    bar.get_height() + 0.05,
-                    f"{t:.1f}s", ha="center", va="bottom", fontsize=10,
-                    fontweight="bold")
-        ax.set_ylabel("Total Wall Time (s)")
-        ax.set_title("(b) Full Pipeline (Graph + E/F/S) — Total Time")
-        ax.set_ylim(bottom=0, top=max(i_times) * 1.25)
-    else:
-        ax.set_title("(b) Full Pipeline — skipped")
-        ax.text(0.5, 0.5, "Skipped", ha="center", va="center",
-                transform=ax.transAxes, fontsize=14, color="gray")
+    per_bin = graph_summary["per_bin"]
+    if per_bin:
+        bc = [b["bin_center"] for b in per_bin]
+        x = np.arange(len(bc))
+        w = 0.25
+        cpu_v = [b["cpu_per_struct_ms"] for b in per_bin]
+        gpu1_v = [b["gpu_1by1_per_struct_ms"] for b in per_bin]
+        gpub_v = [b.get("gpu_batch_per_struct_ms") or 0 for b in per_bin]
+        ax.bar(x - w, cpu_v, w, label="CPU 1-by-1", color=colors[0],
+               edgecolor="white", linewidth=0.5)
+        ax.bar(x, gpu1_v, w, label="GPU 1-by-1", color=colors[1],
+               edgecolor="white", linewidth=0.5)
+        ax.bar(x + w, gpub_v, w, label="GPU Batched", color=colors[2],
+               edgecolor="white", linewidth=0.5)
+        ax.set_xticks(x)
+        ax.set_xticklabels([f"{int(c)}" for c in bc], rotation=45, ha="right")
+        ax.legend(fontsize=9, frameon=True, fancybox=True, framealpha=0.9)
+    ax.set_xlabel("Average Atoms per Bin")
+    ax.set_ylabel("Time (ms / structure)")
+    ax.set_title("(b) Per-Structure Time by Bin")
+    ax.set_ylim(bottom=0)
 
-    # ── (c) Per-structure scatter ──
+    # ── (c) Per-bin line plot ──
     ax = axes[1, 0]
-    records = graph_summary["per_structure"]
-    for key, label in [("cpu_ms", "CPU"), ("gpu_1by1_ms", "GPU 1-by-1")]:
-        valid = [(r["n_atoms"], r[key]) for r in records if r.get(key)]
-        if valid:
-            ns, ts = zip(*valid)
-            ax.scatter(ns, ts, alpha=0.3, s=10, color=COLORS[label],
-                       label=label, edgecolors="none")
+    per_bin = graph_summary["per_bin"]
+    if per_bin:
+        bc = np.array([b["bin_center"] for b in per_bin])
+        cpu_t = np.array([b["cpu_per_struct_ms"] for b in per_bin])
+        gpu1_t = np.array([b["gpu_1by1_per_struct_ms"] for b in per_bin])
+        gpub_t = np.array([
+            b["gpu_batch_per_struct_ms"]
+            if b.get("gpu_batch_per_struct_ms") else 0
+            for b in per_bin
+        ])
+        ax.plot(bc, cpu_t, "o-", color=colors[0], linewidth=2, markersize=6,
+                markeredgecolor="white", markeredgewidth=1, label="CPU 1-by-1")
+        ax.plot(bc, gpu1_t, "s-", color=colors[1], linewidth=2, markersize=6,
+                markeredgecolor="white", markeredgewidth=1, label="GPU 1-by-1")
+        ax.plot(bc, gpub_t, "^-", color=colors[2], linewidth=2, markersize=7,
+                markeredgecolor="white", markeredgewidth=1, label="GPU Batched")
     ax.set_xlabel("Number of Atoms")
-    ax.set_ylabel("Graph Construction Time (ms)")
-    ax.set_title("(c) Per-Structure Graph Construction")
+    ax.set_ylabel("Time (ms / structure)")
+    ax.set_title("(c) Per-Structure Amortized Time")
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.legend(frameon=True, fancybox=True, framealpha=0.9, markerscale=2)
+    ax.legend(frameon=True, fancybox=True, framealpha=0.9)
 
-    # ── (d) Energy parity ──
+    # ── (d) Speedup lines ──
     ax = axes[1, 1]
-    if inf_summary:
-        inf_records = inf_summary["per_structure"]
-        valid_e = [r for r in inf_records
-                   if r.get("cpu_energy") and r.get("gpu_energy")]
-        if valid_e:
-            cpu_e = np.array([r["cpu_energy"] for r in valid_e])
-            gpu_e = np.array([r["gpu_energy"] for r in valid_e])
-            n_e = np.array([r["n_atoms"] for r in valid_e])
-            sc = ax.scatter(cpu_e, gpu_e, c=n_e, cmap="viridis", s=10,
-                            alpha=0.5, edgecolors="none")
-            mn = min(cpu_e.min(), gpu_e.min())
-            mx = max(cpu_e.max(), gpu_e.max())
-            margin = (mx - mn) * 0.03
-            ax.plot([mn - margin, mx + margin], [mn - margin, mx + margin],
-                    "r--", linewidth=1.5, label="y = x")
-            plt.colorbar(sc, ax=ax, label="Atoms", pad=0.02)
-            diff = np.abs(cpu_e - gpu_e)
-            ax.text(0.05, 0.92, f"MAE = {np.mean(diff):.2e} eV",
-                    transform=ax.transAxes, fontsize=11,
-                    bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.7))
-            ax.legend(frameon=True, fancybox=True, framealpha=0.9)
-        ax.set_xlabel("Energy — CPU graph (eV)")
-        ax.set_ylabel("Energy — GPU graph (eV)")
-        ax.set_title("(d) Energy Parity")
-    else:
-        ax.set_title("(d) Energy Parity — skipped")
+    if per_bin:
+        sp_1by1 = cpu_t / np.maximum(gpu1_t, 1e-6)
+        sp_batch = np.where(gpub_t > 0, cpu_t / gpub_t, 0)
+        ax.plot(bc, sp_1by1, "s-", color=colors[1], linewidth=2,
+                markersize=6, markeredgecolor="white", markeredgewidth=1,
+                label="GPU 1-by-1")
+        ax.plot(bc, sp_batch, "^-", color=colors[2], linewidth=2.5,
+                markersize=7, markeredgecolor="white", markeredgewidth=1.5,
+                label="GPU Batched")
+        ax.axhline(y=1.0, color="gray", linestyle=":", linewidth=1.5)
+    ax.set_xlabel("Number of Atoms")
+    ax.set_ylabel("Speedup vs CPU 1-by-1")
+    ax.set_title("(d) Speedup by System Size")
+    ax.set_xscale("log")
+    ax.legend(frameon=True, fancybox=True, framealpha=0.9)
 
     n = graph_summary["n_structures"]
     fig.suptitle(
