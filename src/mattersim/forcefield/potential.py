@@ -1212,6 +1212,7 @@ class MatterSimCalculator(Calculator):
         compute_stress: bool = True,
         stress_weight: float = GPa,
         device: str = "cuda" if torch.cuda.is_available() else "cpu",
+        batch_converter: bool = False,
         **kwargs,
     ):
         """
@@ -1219,6 +1220,7 @@ class MatterSimCalculator(Calculator):
             potential (Potential): m3gnet.models.Potential
             compute_stress (bool): whether to calculate the stress
             stress_weight (float): the stress weight.
+            batch_converter (bool): use GPU-accelerated graph construction
             **kwargs:
         """
         super().__init__(**kwargs)
@@ -1230,6 +1232,7 @@ class MatterSimCalculator(Calculator):
         self.stress_weight = stress_weight
         self.args_dict = args_dict
         self.device = device
+        self.batch_converter = batch_converter
 
     def __getstate__(self):
         """Prepare state for pickling by stripping non-picklable training
@@ -1345,6 +1348,7 @@ class MatterSimCalculator(Calculator):
             model_type=self.potential.model_name,
             cutoff=cutoff,
             threebody_cutoff=threebody_cutoff,
+            batch_converter=self.batch_converter,
             **self.args_dict,
         )
         for graph_batch in dataloader:

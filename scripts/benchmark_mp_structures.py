@@ -263,6 +263,161 @@ def benchmark_graph_construction(
     return summary
 
 
+def benchmark_md_simulation(
+    atoms_list: list[Atoms],
+    per_bin_info: list[dict],
+    device: str = "cuda",
+    md_steps: int = 10,
+) -> list[dict]:
+    """Run short MD simulations comparing CPU vs GPU graph construction.
+
+    Picks one representative structure per bin and runs NVE MD for ``md_steps``
+    steps using ``MatterSimCalculator`` with both ``batch_converter=False``
+    (CPU graph) and ``batch_converter=True`` (GPU graph).
+
+    Returns per-bin MD timing results.
+    """
+    from ase.md.verlet import VelocityVerlet
+    from ase import units as ase_units
+
+    from mattersim.forcefield.potential import MatterSimCalculator, Potential
+
+    # Load model once
+    potential = Potential.from_checkpoint(device=device)
+    potential.model.eval()
+
+    results = []
+    sizes = np.array([len(a) for a in atoms_list])
+
+    # Use the same bins as the graph benchmark
+    n_bins = len(per_bin_info)
+    lo, hi = sizes.min(), sizes.max()
+    bin_edges = np.logspace(np.log10(max(lo, 1)), np.log10(hi), n_bins + 1)
+    bin_indices = np.digitize(sizes, bin_edges)
+
+    for b_idx, binfo in enumerate(per_bin_info):
+        b = b_idx + 1  # bin_indices are 1-based from digitize
+        mask = bin_indices == b
+        if mask.sum() < 1:
+            continue
+
+        # Pick the structure closest to bin center
+        bin_idxs = np.where(mask)[0]
+        center = binfo["bin_center"]
+        closest = bin_idxs[np.argmin(np.abs(sizes[bin_idxs] - center))]
+        atoms_orig = atoms_list[closest].copy()
+        n_atoms = len(atoms_orig)
+
+        record = {"n_atoms": n_atoms, "bin_center": center}
+
+        for mode, use_gpu in [("cpu_graph", False), ("gpu_graph", True)]:
+            atoms = atoms_orig.copy()
+            calc = MatterSimCalculator(
+                potential=potential,
+                compute_stress=True,
+                device=device,
+                batch_converter=use_gpu,
+            )
+            atoms.calc = calc
+
+            # Initialize velocities
+            from ase.md.velocitydistribution import (
+                MaxwellBoltzmannDistribution,
+            )
+
+            MaxwellBoltzmannDistribution(atoms, temperature_K=300)
+
+            dyn = VelocityVerlet(atoms, timestep=1.0 * ase_units.fs)
+
+            # Warmup: 1 step
+            dyn.run(1)
+            if torch.cuda.is_available():
+                torch.cuda.synchronize()
+
+            # Timed MD
+            t0 = time.perf_counter()
+            dyn.run(md_steps)
+            if torch.cuda.is_available():
+                torch.cuda.synchronize()
+            elapsed_ms = (time.perf_counter() - t0) * 1000
+            per_step_ms = elapsed_ms / md_steps
+
+            record[f"{mode}_total_ms"] = elapsed_ms
+            record[f"{mode}_per_step_ms"] = per_step_ms
+
+        speedup = (
+            record["cpu_graph_per_step_ms"] / record["gpu_graph_per_step_ms"]
+            if record["gpu_graph_per_step_ms"] > 0
+            else 0
+        )
+        record["speedup"] = speedup
+
+        print(
+            f"    {n_atoms:>4} atoms: "
+            f"cpu={record['cpu_graph_per_step_ms']:.1f} ms/step  "
+            f"gpu={record['gpu_graph_per_step_ms']:.1f} ms/step  "
+            f"speedup={speedup:.2f}×"
+        )
+        results.append(record)
+
+    del potential
+    if torch.cuda.is_available():
+        try:
+            torch.cuda.empty_cache()
+        except Exception:
+            pass
+    gc.collect()
+    return results
+
+
+def plot_md_benchmark(md_results: list[dict], output_path: str, md_steps: int):
+    """Bar + line plot for MD benchmark."""
+    setup_plot_style()
+    fig, axes = plt.subplots(1, 2, figsize=(15, 5.5))
+
+    n_atoms = [r["n_atoms"] for r in md_results]
+    cpu_ms = [r["cpu_graph_per_step_ms"] for r in md_results]
+    gpu_ms = [r["gpu_graph_per_step_ms"] for r in md_results]
+    speedups = [r["speedup"] for r in md_results]
+    x = np.arange(len(n_atoms))
+    w = 0.35
+
+    # Left: per-step time
+    ax = axes[0]
+    ax.bar(x - w / 2, cpu_ms, w, label="CPU Graph",
+           color=COLORS["CPU 1-by-1"], edgecolor="white", linewidth=0.5)
+    ax.bar(x + w / 2, gpu_ms, w, label="GPU Graph",
+           color=COLORS["GPU Batched"], edgecolor="white", linewidth=0.5)
+    ax.set_xlabel("Number of Atoms")
+    ax.set_ylabel("Time per MD Step (ms)")
+    ax.set_title(f"(a) MD Simulation — {md_steps} NVE Steps per Structure")
+    ax.set_xticks(x)
+    ax.set_xticklabels(n_atoms)
+    ax.legend(frameon=True, fancybox=True, framealpha=0.9)
+    ax.set_ylim(bottom=0)
+
+    # Right: speedup
+    ax = axes[1]
+    bars = ax.bar(x, speedups, 0.6, color=COLORS["GPU Batched"],
+                  edgecolor="white", linewidth=0.5)
+    ax.axhline(y=1.0, color="gray", linestyle=":", linewidth=1.5)
+    for bar, s in zip(bars, speedups):
+        ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.02,
+                f"{s:.2f}×", ha="center", va="bottom", fontsize=10,
+                fontweight="bold", color=COLORS["GPU Batched"])
+    ax.set_xlabel("Number of Atoms")
+    ax.set_ylabel("Speedup (CPU Graph / GPU Graph)")
+    ax.set_title("(b) GPU Graph Speedup in MD")
+    ax.set_xticks(x)
+    ax.set_xticklabels(n_atoms)
+    ax.set_ylim(bottom=0)
+
+    fig.tight_layout()
+    fig.savefig(output_path)
+    plt.close(fig)
+    print(f"  Saved → {output_path}")
+
+
 def benchmark_full_inference(
     atoms_list: list[Atoms],
     potential,
@@ -833,6 +988,8 @@ def main():
     )
     parser.add_argument("--skip-inference", action="store_true",
                         help="Skip full inference benchmark (faster)")
+    parser.add_argument("--skip-md", action="store_true",
+                        help="Skip MD simulation benchmark")
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
@@ -932,7 +1089,26 @@ def main():
                 pass
         gc.collect()
 
-    # 5. Generate plots
+    # 5. MD simulation benchmark
+    md_steps = 10
+    md_results = []
+    if not args.skip_md:
+        print("\n" + "=" * 70)
+        print(f"Benchmarking MD simulation ({md_steps} NVE steps per structure)")
+        print("  1 structure per atom-count bin, CPU vs GPU graph construction")
+        print("=" * 70)
+
+        md_results = benchmark_md_simulation(
+            atoms_list,
+            graph_summary["per_bin"],
+            device=args.device,
+            md_steps=md_steps,
+        )
+
+        with open(os.path.join(output_dir, "md_results.json"), "w") as f:
+            json.dump(md_results, f, indent=2, default=str)
+
+    # 6. Generate plots
     print("\n" + "=" * 70)
     print("Generating plots...")
     print("=" * 70)
@@ -947,6 +1123,13 @@ def main():
         graph_summary, os.path.join(output_dir, "graph_binned.png"),
     )
 
+    if md_results:
+        plot_md_benchmark(
+            md_results,
+            os.path.join(output_dir, "md_benchmark.png"),
+            md_steps,
+        )
+
     if inf_summary:
         plot_inference_total_bar(
             inf_summary, os.path.join(output_dir, "inference_total_bar.png"),
@@ -954,11 +1137,13 @@ def main():
         plot_energy_parity(
             inf_summary, os.path.join(output_dir, "energy_parity.png"),
         )
-        plot_summary_4panel(
-            graph_summary, inf_summary,
-            os.path.join(output_dir, "summary_mp.png"),
-            gpu_name,
-        )
+
+    # Summary panel (always generate with graph data)
+    plot_summary_4panel(
+        graph_summary, inf_summary,
+        os.path.join(output_dir, "summary_mp.png"),
+        gpu_name,
+    )
 
     print(f"\n{'=' * 70}")
     print(f"All outputs saved to {output_dir}/")
