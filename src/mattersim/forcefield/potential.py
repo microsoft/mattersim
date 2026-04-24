@@ -1118,25 +1118,45 @@ class Potential(nn.Module):
 
 def batch_to_dict(graph_batch, model_type="m3gnet", device="cuda"):
     if model_type == "m3gnet":
-        # TODO: key_list
-        # Precompute scalar sums on CPU before moving tensors to device,
-        # to avoid device-to-host sync when calling int() on MPS/CUDA tensors.
+        # Detect if data is already on the target device (e.g. from
+        # BatchGraphConverter).  If so, skip redundant .to(device) calls.
+        if not torch.cuda.is_available() and device != "cpu":
+            device = "cpu"
+        src_device = graph_batch.atom_pos.device
+        target_device = torch.device(device)
+        already_on_device = src_device == target_device
+
+        # Precompute scalar sums before device transfer to avoid sync
         total_num_atoms = int(graph_batch.num_atoms.sum())
         total_num_bonds = int(graph_batch.num_bonds.sum())
 
-        atom_pos = graph_batch.atom_pos.to(device)
-        cell = graph_batch.cell.to(device)
-        pbc_offsets = graph_batch.pbc_offsets.to(device)
-        atom_attr = graph_batch.atom_attr.to(device)
-        edge_index = graph_batch.edge_index.to(device)
-        three_body_indices = graph_batch.three_body_indices.to(device)
-        num_three_body = graph_batch.num_three_body.to(device)
-        num_bonds = graph_batch.num_bonds.to(device)
-        num_triple_ij = graph_batch.num_triple_ij.to(device)
-        num_atoms = graph_batch.num_atoms.to(device)
+        if already_on_device:
+            atom_pos = graph_batch.atom_pos
+            cell = graph_batch.cell
+            pbc_offsets = graph_batch.pbc_offsets
+            atom_attr = graph_batch.atom_attr
+            edge_index = graph_batch.edge_index
+            three_body_indices = graph_batch.three_body_indices
+            num_three_body = graph_batch.num_three_body
+            num_bonds = graph_batch.num_bonds
+            num_triple_ij = graph_batch.num_triple_ij
+            num_atoms = graph_batch.num_atoms
+            batch = graph_batch.batch
+        else:
+            atom_pos = graph_batch.atom_pos.to(device)
+            cell = graph_batch.cell.to(device)
+            pbc_offsets = graph_batch.pbc_offsets.to(device)
+            atom_attr = graph_batch.atom_attr.to(device)
+            edge_index = graph_batch.edge_index.to(device)
+            three_body_indices = graph_batch.three_body_indices.to(device)
+            num_three_body = graph_batch.num_three_body.to(device)
+            num_bonds = graph_batch.num_bonds.to(device)
+            num_triple_ij = graph_batch.num_triple_ij.to(device)
+            num_atoms = graph_batch.num_atoms.to(device)
+            batch = graph_batch.batch.to(device)
+
         num_graphs = graph_batch.num_graphs
         num_graphs = torch.tensor(num_graphs, device=device)
-        batch = graph_batch.batch.to(device)
 
         # Resemble input dictionary
         input = {}
@@ -1158,14 +1178,12 @@ def batch_to_dict(graph_batch, model_type="m3gnet", device="cuda"):
         input["total_num_bonds"] = total_num_bonds
 
         # Bond index bias for three-body offset computation
-        # (replaces repeat_interleave(cumsum, num_three_body) in m3gnet.py)
         cumsum = torch.cumsum(num_bonds, dim=0) - num_bonds
         input["bond_index_bias"] = torch.repeat_interleave(
             cumsum, num_three_body, dim=0
         ).unsqueeze(-1)
 
         # Edge-to-three-body map for scatter in ThreeDInteraction
-        # (replaces repeat_interleave(arange, num_triple_ij) in message_passing.py)
         total_bonds = input["total_num_bonds"]
         index_map = torch.arange(total_bonds, device=num_triple_ij.device)
         input["three_body_edge_map"] = torch.repeat_interleave(

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import time
 import warnings
 
@@ -27,6 +26,7 @@ def build_dataloader(
     multithreading: int = 0,
     dataset=None,
     finetune_task_label: list = None,
+    batch_converter: bool = False,
     **kwargs,
 ):
     """
@@ -43,6 +43,9 @@ def build_dataloader(
         - pin_memory_device : the device for pin_memory
         - dataset : the dataset object for the dataloader
                     only used for graphormer and geomformer
+        - batch_converter : if True, use GPU-accelerated BatchGraphConverter
+                            for graph construction (much faster for large
+                            datasets). Default: False (backward compatible).
     """
 
     convertor = GraphConvertor(model_type, cutoff, True, threebody_cutoff)
@@ -69,7 +72,22 @@ def build_dataloader(
             stresses = [None] * length
 
     if model_type == "m3gnet":
-        if multiprocessing == 0 and multithreading == 0:
+        if batch_converter:
+            from mattersim.datasets.utils.converter import BatchGraphConverter
+
+            gpu_converter = BatchGraphConverter(
+                model_type="m3gnet",
+                twobody_cutoff=cutoff,
+                has_threebody=True,
+                threebody_cutoff=threebody_cutoff,
+            )
+            preprocessed_data = gpu_converter.convert(
+                atoms,
+                energy=energies,
+                forces=forces,
+                stresses=stresses,
+            )
+        elif multiprocessing == 0 and multithreading == 0:
             # start = time.time()
             for graph, energy, force, stress in zip(atoms, energies, forces, stresses):
                 graph = convertor.convert(graph.copy(), energy, force, stress, **kwargs)
