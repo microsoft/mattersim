@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
 import torch
 import torch.nn as nn
-from torch_runstats.scatter import scatter
 
 from .layers import GatedMLP, LinearLayer, SigmoidLayer, SwishLayer
+from .scatter import scatter_sum
 
 
 def polynomial(r: torch.Tensor, cutoff: float) -> torch.Tensor:
@@ -88,11 +87,10 @@ class ThreeDInteraction(nn.Module):
         if total_num_bonds < 0:
             total_num_bonds = torch.sum(num_edges).item()
 
-        e_ij_tuda = scatter(
+        e_ij_tuda = scatter_sum(
             three_basis,
             index_map,
             dim=0,
-            reduce="sum",
             dim_size=total_num_bonds,
         )
         edge_attr_prime = edge_attr + self.edge_gate_mlp(e_ij_tuda)
@@ -136,7 +134,7 @@ class AtomLayer(nn.Module):
             dim=1,
         )
         atom_attr_prime = self.gated_mlp(feat) * self.edge_layer(edge_attr)
-        atom_attr_prime = scatter(
+        atom_attr_prime = scatter_sum(
             atom_attr_prime,
             edge_index[1],
             dim=0,
@@ -267,7 +265,7 @@ class MainBlock(nn.Module):
         atom_attr_prime = self.gated_mlp_atom(feat) * self.edge_layer_atom(
             edge_attr_zero
         )
-        atom_attr = atom_attr + scatter(  # noqa: E501
+        atom_attr = atom_attr + scatter_sum(  # noqa: E501
             atom_attr_prime,
             edge_index[0],
             dim=0,

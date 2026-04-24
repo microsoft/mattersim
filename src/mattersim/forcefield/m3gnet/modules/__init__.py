@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from .angle_encoding import SphericalBasisLayer
 from .edge_encoding import SmoothBesselBasis
 from .layers import MLP, GatedMLP, LinearLayer, SwishLayer

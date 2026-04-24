@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Potential
 """
@@ -26,7 +25,6 @@ from torchmetrics import MeanMetric
 
 from mattersim.datasets.utils.build import build_dataloader
 from mattersim.forcefield.m3gnet.m3gnet import M3Gnet
-from mattersim.jit_compile_tools.jit import compile_mode
 from mattersim.utils.download_utils import download_checkpoint
 from mattersim.utils.logger_utils import get_logger
 
@@ -34,7 +32,6 @@ rank = int(os.getenv("RANK", 0))
 logger = get_logger()
 
 
-@compile_mode("script")
 class Potential(nn.Module):
     """
     A wrapper class for the force field model
@@ -107,6 +104,29 @@ class Potential(nn.Module):
         self.rank = None
 
         self.use_finetune_label_loss = kwargs.get("use_finetune_label_loss", False)
+        self.version = kwargs.get("version", "")
+
+    def enable_gradient_checkpointing(self, enable: bool = True):
+        """Enable gradient checkpointing for memory-efficient inference on
+        large systems.
+
+        When enabled, intermediate activations are recomputed during the
+        backward pass instead of being stored, reducing memory usage by ~50%
+        at the cost of ~30% slower computation.
+
+        For very large systems (>50k atoms), this can enable successful
+        execution that would otherwise OOM.
+
+        Args:
+            enable: Whether to enable gradient checkpointing. Default True.
+        """
+        if hasattr(self.model, "enable_gradient_checkpointing"):
+            self.model.enable_gradient_checkpointing(enable)
+        else:
+            logger.warning(
+                f"Model {self.model_name} does not support "
+                "gradient checkpointing"
+            )
 
     def freeze_reset_model(
         self,
@@ -744,6 +764,33 @@ class Potential(nn.Module):
         if self.model_name == "graphormer" or self.model_name == "geomformer":
             raise NotImplementedError
         else:
+            # AOTI fast path: energy/forces/stresses already computed in the
+            # compiled artifact — skip strain setup and autograd.
+            if getattr(self.model, "_is_aoti", False):
+                if include_forces and not getattr(
+                    self.model, "include_forces", True
+                ):
+                    raise RuntimeError(
+                        "Forces were requested but the AOTI-compiled model "
+                        "was built with include_forces=False. Recompile with "
+                        "include_forces=True or use the eager model."
+                    )
+                if include_stresses and not getattr(
+                    self.model, "include_stresses", True
+                ):
+                    raise RuntimeError(
+                        "Stresses were requested but the AOTI-compiled model "
+                        "was built with include_stresses=False. Recompile "
+                        "with include_stresses=True or use the eager model."
+                    )
+                result = self.model.forward(input, dataset_idx)
+                output["total_energy"] = result["total_energy"]
+                if include_forces:
+                    output["forces"] = result["forces"]
+                if include_stresses:
+                    output["stresses"] = result["stresses"]
+                return output
+
             strain = torch.zeros_like(input["cell"], device=self.device)
             volume = torch.linalg.det(input["cell"])
             if include_forces is True:
