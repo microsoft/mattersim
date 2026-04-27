@@ -407,3 +407,147 @@ class BatchGraphConverter:
 
         pbar.close()
         return graphs
+
+
+def _normalize_atoms(atoms: Atoms, twobody_cutoff: float, threebody_cutoff: float) -> Atoms:
+    """Normalize an ASE Atoms object for graph construction.
+
+    Handles non-periodic structures by creating a large fake cell (matching
+    the behavior of the legacy GraphConvertor).
+    """
+    atoms = atoms.copy()
+    pbc = np.array(atoms.pbc, dtype=np.int64)
+    if np.all(pbc < 1):
+        # Non-periodic: create large cubic cell
+        pos = atoms.positions
+        extent = pos.max(axis=0) - pos.min(axis=0)
+        pad = max(twobody_cutoff, threebody_cutoff) * 5
+        box_len = max(extent.max() + pad, pad)
+        atoms.set_cell(np.eye(3) * box_len)
+        atoms.set_pbc([True, True, True])
+    atoms.wrap()
+    return atoms
+
+
+
+def create_batch_graph_dict(
+    pos: torch.Tensor,
+    cell: torch.Tensor,
+    atomic_numbers: torch.Tensor,
+    num_atoms: torch.Tensor,
+    energy: torch.Tensor | None = None,
+    forces: torch.Tensor | None = None,
+    stress: torch.Tensor | None = None,
+    *,
+    twobody_cutoff: float = 5.0,
+    threebody_cutoff: float = 4.0,
+    pbc: torch.Tensor | bool = True,
+    max_num_neighbors_threshold: int = 0,
+) -> dict[str, torch.Tensor]:
+    """Build a MatterSim graph input dict directly from batched tensors.
+
+    This function creates the same graph representation as
+    BatchGraphConverter.convert() but operates directly on flat tensors,
+    avoiding intermediate Atoms/Data conversion.
+
+    Args:
+        pos: [total_atoms, 3] Cartesian positions in Angstrom.
+        cell: [batch_size, 3, 3] unit cell matrices in Angstrom.
+        atomic_numbers: [total_atoms] atomic numbers.
+        num_atoms: [batch_size] number of atoms per structure.
+        energy: [batch_size] optional total energies in eV.
+        forces: [total_atoms, 3] optional forces in eV/Angstrom.
+        stress: [batch_size, 3, 3] optional stress tensors in GPa.
+        twobody_cutoff: Cutoff radius for two-body interactions (edges).
+        threebody_cutoff: Cutoff radius for three-body interactions.
+        pbc: Periodic boundary conditions. Bool or [batch_size, 3] tensor.
+        max_num_neighbors_threshold: Max neighbors per atom. 0 = no limit.
+
+    Returns:
+        Dict with all fields expected by Potential.forward():
+            atom_pos, cell, pbc_offsets, atom_attr, edge_index,
+            three_body_indices (global edge indices), num_three_body,
+            num_bonds, num_triple_ij, num_atoms, num_graphs, batch.
+            Plus optional energy, forces, stress.
+    """
+    device = pos.device
+    dtype = pos.dtype
+    n_graphs = cell.shape[0]
+
+    num_atoms = num_atoms.to(torch.long)
+
+    # Batch indices: which graph each atom belongs to
+    batch = torch.repeat_interleave(
+        torch.arange(n_graphs, device=device), num_atoms
+    )
+
+    # Handle pbc
+    if isinstance(pbc, bool):
+        pbc_expanded = torch.full(
+            (n_graphs, 3), pbc, dtype=torch.bool, device=device
+        )
+    elif isinstance(pbc, torch.Tensor):
+        if pbc.dim() == 1:
+            pbc_expanded = pbc.unsqueeze(0).expand(n_graphs, -1)
+        else:
+            pbc_expanded = pbc
+    else:
+        pbc_expanded = torch.tensor(
+            pbc, dtype=torch.bool, device=device
+        ).unsqueeze(0).expand(n_graphs, -1)
+
+    # Compute edges using radius_graph_pbc_efficient
+    edge_index, pbc_offsets, num_edges, _, distances = (
+        radius_graph_pbc_efficient(
+            pos=pos,
+            pbc=pbc_expanded,
+            cell=cell,
+            natoms=num_atoms,
+            radius=twobody_cutoff,
+            max_num_neighbors_threshold=max_num_neighbors_threshold,
+            max_cell_images_per_dim=(
+                10 if max_num_neighbors_threshold != 0 else sys.maxsize
+            ),
+        )
+    )
+
+    # Swap edge order to match MatterSim convention
+    edge_index = torch.stack([edge_index[1], edge_index[0]], dim=0)
+    num_edges = num_edges.to(torch.long)
+
+    # Compute three-body indices (returns global edge indices)
+    triple_bond_indices_global, n_triple_ij, _, num_three_body = (
+        compute_threebody_indices_torch(
+            edge_indices=edge_index,
+            distances=distances,
+            num_atoms=num_atoms,
+            threebody_cutoff=threebody_cutoff,
+        )
+    )
+
+    result = {
+        "atom_pos": pos,
+        "cell": cell,
+        "pbc_offsets": pbc_offsets.to(dtype),
+        "atom_attr": atomic_numbers.unsqueeze(-1).to(dtype),
+        "edge_index": edge_index,
+        "three_body_indices": triple_bond_indices_global,
+        "num_three_body": num_three_body.long(),
+        "num_bonds": num_edges,
+        "num_triple_ij": n_triple_ij.unsqueeze(-1),
+        "num_atoms": num_atoms,
+        "num_graphs": torch.scalar_tensor(
+            n_graphs, dtype=torch.long, device=device
+        ),
+        "batch": batch,
+    }
+
+    # Add optional labels
+    if energy is not None:
+        result["energy"] = energy
+    if forces is not None:
+        result["forces"] = forces
+    if stress is not None:
+        result["stress"] = stress
+
+    return result
