@@ -21,10 +21,6 @@ TENSOR_KEYS = [
     "num_atoms",
     "num_graphs",
     "batch",
-    "total_num_atoms",
-    "total_num_bonds",
-    "bond_index_bias",
-    "three_body_edge_map",
 ]
 
 

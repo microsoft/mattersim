@@ -111,7 +111,6 @@ class AOTISettings:
 _BATCH_DIM = Dim("batch_size", min=1)
 _NODE_DIM = Dim("num_atoms", min=1)
 _EDGE_DIM = Dim("num_edges", min=1)
-_THREE_BODY_DIM = Dim("num_three_body", min=1)
 
 MATTERSIM_DYNAMIC_SHAPES: tuple[dict[int, Dim], ...] = (
     {0: _NODE_DIM, 1: Dim.STATIC},  # atom_pos [N, 3]
@@ -119,7 +118,7 @@ MATTERSIM_DYNAMIC_SHAPES: tuple[dict[int, Dim], ...] = (
     {0: _EDGE_DIM, 1: Dim.STATIC},  # pbc_offsets [E, 3]
     {0: _NODE_DIM, 1: Dim.STATIC},  # atom_attr [N, 1]
     {0: Dim.STATIC, 1: _EDGE_DIM},  # edge_index [2, E]
-    {0: _THREE_BODY_DIM, 1: Dim.STATIC},  # three_body_indices [T, 2]
+    {0: Dim.AUTO, 1: Dim.STATIC},  # three_body_indices [T, 2]
     {0: _BATCH_DIM},  # num_three_body [B]
     {0: _BATCH_DIM},  # num_bonds [B]
     {0: _EDGE_DIM, 1: Dim.STATIC},  # num_triple_ij [E, 1]

@@ -79,32 +79,14 @@ class M3Gnet(nn.Module):
         # Exact data from input_dictionary
         pos = input["atom_pos"]
         cell = input["cell"]
-        pbc_offsets = input["pbc_offsets"].float()
+        pbc_offsets = input["pbc_offsets"]
         atom_attr = input["atom_attr"]
         edge_index = input["edge_index"].long()
         three_body_indices = input["three_body_indices"].long()
         num_bonds = input["num_bonds"]
         num_triple_ij = input["num_triple_ij"]
         num_atoms = input["num_atoms"]
-        num_graphs = input["num_graphs"]
         batch = input["batch"]
-
-        # Use precomputed values if available, otherwise derive from shapes
-        # (avoids device-to-host sync on MPS/CUDA)
-        total_num_atoms = input.get("total_num_atoms", pos.shape[0])
-        total_num_bonds = input.get("total_num_bonds", edge_index.shape[1])
-
-        bond_index_bias = input.get("bond_index_bias", None)
-        if bond_index_bias is None:
-            cumsum = torch.cumsum(num_bonds, dim=0) - num_bonds
-            bond_index_bias = torch.repeat_interleave(
-                cumsum, input["num_three_body"], dim=0
-            ).unsqueeze(-1)
-
-        three_body_edge_map = input.get("three_body_edge_map", None)
-
-        # -------------------------------------------------------------#
-        three_body_indices = three_body_indices + bond_index_bias
 
         # === Refer to the implementation of M3GNet,        ===
         # === we should re-compute the following attributes ===
@@ -149,9 +131,6 @@ class M3Gnet(nn.Module):
                 num_edges=num_bonds,
                 num_triple_ij=num_triple_ij,
                 num_atoms=num_atoms,
-                total_num_atoms=total_num_atoms,
-                total_num_bonds=total_num_bonds,
-                three_body_edge_map=three_body_edge_map,
             )
             if self.gradient_checkpointing:
                 # use_reentrant=False is recommended and works with
