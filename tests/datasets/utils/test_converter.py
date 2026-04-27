@@ -1,12 +1,12 @@
-"""Tests for convertor — verifies that pbc arrays use explicit np.int64 dtype
+"""Tests for converter — verifies that pbc arrays use explicit np.int64 dtype
 to satisfy pymatgen's Cython typed memoryview in find_points_in_spheres,
 which requires int64 but receives platform-dependent C long on Windows.
 """
 
 import numpy as np
 
-from mattersim.datasets.utils.convertor import (
-    GraphConvertor,
+from mattersim.datasets.utils.converter import (
+    GraphConverter,
     get_fixed_radius_bonding,
 )
 
@@ -35,13 +35,13 @@ class TestGetFixedRadiusBonding:
         assert np.all(distances > 0)
 
 
-class TestGraphConvertor:
-    """Tests for the GraphConvertor.convert method."""
+class TestGraphConverter:
+    """Tests for the GraphConverter.convert method."""
 
     def test_periodic_structure_converts(self, si_diamond):
         """Periodic structure should convert without dtype errors."""
-        convertor = GraphConvertor(model_type="m3gnet")
-        graph = convertor.convert(si_diamond)
+        converter = GraphConverter(model_type="m3gnet")
+        graph = converter.convert(si_diamond)
         assert graph is not None
         assert hasattr(graph, "edge_index")
         assert hasattr(graph, "atom_pos")
@@ -49,14 +49,14 @@ class TestGraphConvertor:
     def test_non_periodic_structure_converts(self, water_molecule):
         """Non-periodic molecule should convert (with auto-supercell)
         without dtype errors."""
-        convertor = GraphConvertor(model_type="m3gnet")
-        graph = convertor.convert(water_molecule)
+        converter = GraphConverter(model_type="m3gnet")
+        graph = converter.convert(water_molecule)
         assert graph is not None
         assert hasattr(graph, "edge_index")
 
     def test_pbc_fallback_uses_int64(self, water_molecule):
         """When PBC is False, the fallback pbc array [1,1,1] must also
         be int64 to avoid Cython dtype mismatch."""
-        convertor = GraphConvertor(model_type="m3gnet")
-        graph = convertor.convert(water_molecule)
+        converter = GraphConverter(model_type="m3gnet")
+        graph = converter.convert(water_molecule)
         assert graph is not None

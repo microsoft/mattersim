@@ -6,7 +6,7 @@ import torch
 from ase import Atoms
 from torch_geometric.loader import DataLoader as DataLoader_pyg
 
-from mattersim.datasets.utils.convertor import GraphConvertor
+from mattersim.datasets.utils.converter import GraphConverter
 
 
 def build_dataloader(
@@ -48,7 +48,7 @@ def build_dataloader(
                             datasets). Default: False (backward compatible).
     """
 
-    convertor = GraphConvertor(model_type, cutoff, True, threebody_cutoff)
+    convertor = GraphConverter(model_type, cutoff, True, threebody_cutoff)
 
     preprocessed_data = []
 
@@ -145,7 +145,7 @@ def build_dataloader(
 
 
 def multiprocess_data(atoms: list[Atoms], number):
-    convertor = GraphConvertor()
+    convertor = GraphConverter()
     result = []
     for graph in atoms:
         graph = convertor.convert(
