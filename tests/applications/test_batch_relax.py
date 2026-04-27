@@ -23,7 +23,11 @@ def test_default_batch_relaxer(available_device, si_diamond_cubic, perturb):
         assert trajectory[-1].info["total_energy"] is not None
         assert trajectory[-1].arrays["forces"] is not None
         assert trajectory[-1].info["stress"] is not None
-        # Verify relaxation converged (forces below threshold)
-        fmax = np.abs(trajectory[-1].arrays["forces"]).max()
+        # Note: the relaxer converges on the *filtered* gradient
+        # (atomic forces + cell stress, shape [natoms+3, 3]) when using
+        # ExpCellFilter. The last trajectory snapshot is recorded before
+        # the final optimizer step, so raw atomic forces may be slightly
+        # above the target fmax. We use a looser threshold here.
+        fmax = np.linalg.norm(trajectory[-1].arrays["forces"], axis=-1).max()
         assert fmax < 0.1, f"Relaxation did not converge: fmax={fmax}"
 
