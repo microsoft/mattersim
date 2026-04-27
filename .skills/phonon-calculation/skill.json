@@ -1,0 +1,116 @@
+{
+  "name": "phonon-calculation",
+  "version": "1.0.0",
+  "description": "Calculate phonon properties (band structure, DOS, force constants) for periodic structures using MatterSim and phonopy.",
+  "authors": ["MatterSim Team"],
+  "tags": ["mattersim", "phonon", "phonopy", "band-structure", "DOS", "force-field", "lattice-dynamics"],
+  "inputs": {
+    "structures": {
+      "type": "List[ase.Atoms]",
+      "description": "One or more fully periodic ASE Atoms objects. Must have pbc=True in all directions. May originate from files on disk (CIF, POSCAR, XYZ, extxyz), ASE bulk builders, inline coordinates, or pymatgen Structure objects.",
+      "required": true
+    },
+    "model": {
+      "type": "string",
+      "description": "MatterSim checkpoint name.",
+      "default": "mattersim-v1.0.0-1m",
+      "enum": ["mattersim-v1.0.0-1m", "mattersim-v1.0.0-5m"]
+    },
+    "device": {
+      "type": "string",
+      "description": "Compute device.",
+      "default": "auto",
+      "enum": ["auto", "cpu", "cuda"]
+    },
+    "relax_first": {
+      "type": "boolean",
+      "description": "Whether to relax the structure before running phonon calculations. Recommended unless the structure is already relaxed.",
+      "default": true
+    },
+    "relax_optimizer": {
+      "type": "string",
+      "description": "ASE optimiser for pre-phonon relaxation (only used when relax_first=true).",
+      "default": "FIRE",
+      "enum": ["FIRE", "BFGS"]
+    },
+    "relax_fmax": {
+      "type": "number",
+      "description": "Force convergence tolerance for pre-phonon relaxation in eV/Å.",
+      "default": 0.01
+    },
+    "relax_steps": {
+      "type": "integer",
+      "description": "Maximum relaxation steps.",
+      "default": 500
+    },
+    "relax_filter": {
+      "type": "string | null",
+      "description": "Cell filter for variable-cell relaxation before phonon. null keeps cell fixed.",
+      "default": "FrechetCellFilter",
+      "enum": [null, "FrechetCellFilter", "ExpCellFilter"]
+    },
+    "relax_pressure": {
+      "type": "number | null",
+      "description": "External pressure for pre-phonon cell relaxation.",
+      "default": null
+    },
+    "relax_pressure_unit": {
+      "type": "string",
+      "description": "Unit of relax_pressure.",
+      "default": "GPa",
+      "enum": ["GPa", "kbar", "eV/A^3"]
+    },
+    "relax_constrain_symmetry": {
+      "type": "boolean",
+      "description": "Preserve space-group symmetry during pre-phonon relaxation.",
+      "default": true
+    },
+    "find_prim": {
+      "type": "boolean",
+      "description": "Whether to find and use the primitive cell for phonon calculation.",
+      "default": false
+    },
+    "amplitude": {
+      "type": "number",
+      "description": "Displacement magnitude for finite-difference force constant calculation, in Angstrom.",
+      "default": 0.01
+    },
+    "supercell_matrix": {
+      "type": "array | null",
+      "description": "Supercell matrix as [n1, n2, n3] or [[...],[...],[...]]. null for automatic detection.",
+      "default": null
+    },
+    "qpoints_mesh": {
+      "type": "array | null",
+      "description": "Q-point mesh for Brillouin zone integration as [n1, n2, n3]. null for automatic detection.",
+      "default": null
+    },
+    "max_atoms": {
+      "type": "integer | null",
+      "description": "Maximum atom count for automatic supercell generation. null for automatic setting based on symmetry.",
+      "default": null
+    }
+  },
+  "outputs": {
+    "phonon_results.json": {
+      "type": "file",
+      "description": "Combined JSON with metadata, relaxation provenance, and phonon results for all structures."
+    },
+    "FORMULA_phonon_band.png": {
+      "type": "file",
+      "description": "Phonon band structure plot (per structure)."
+    },
+    "FORMULA_phonon_dos.png": {
+      "type": "file",
+      "description": "Phonon density of states plot (per structure)."
+    },
+    "phonopy_params.yaml": {
+      "type": "file",
+      "description": "Phonopy parameters and force constants (per structure)."
+    },
+    "terminal_summary": {
+      "type": "stdout",
+      "description": "Formatted summary table printed to the terminal."
+    }
+  }
+}

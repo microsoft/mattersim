@@ -10,6 +10,7 @@ specific task.
 | Skill | Description |
 |-------|-------------|
 | [relax-structures](./relax-structures/) | Run structure relaxation with MatterSim |
+| [phonon-calculation](./phonon-calculation/) | Calculate phonon properties (band structure, DOS, force constants) with MatterSim + phonopy |
 
 ## Structure
 
