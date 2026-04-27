@@ -1,0 +1,78 @@
+{
+  "name": "relax-structures",
+  "version": "1.0.0",
+  "description": "Perform atomic structure relaxation (geometry optimisation) using MatterSim force-field models.",
+  "authors": ["MatterSim Team"],
+  "tags": ["mattersim", "relaxation", "geometry-optimisation", "ase", "force-field"],
+  "inputs": {
+    "structures": {
+      "type": "List[ase.Atoms]",
+      "description": "One or more ASE Atoms objects to relax. May originate from files on disk (CIF, POSCAR, XYZ, extxyz), ASE bulk builders, inline coordinates, or pymatgen Structure objects.",
+      "required": true
+    },
+    "model": {
+      "type": "string",
+      "description": "MatterSim checkpoint name.",
+      "default": "mattersim-v1.0.0-1m",
+      "enum": ["mattersim-v1.0.0-1m", "mattersim-v1.0.0-5m"]
+    },
+    "device": {
+      "type": "string",
+      "description": "Compute device.",
+      "default": "auto",
+      "enum": ["auto", "cpu", "cuda"]
+    },
+    "optimizer": {
+      "type": "string",
+      "description": "ASE optimiser algorithm.",
+      "default": "FIRE",
+      "enum": ["FIRE", "BFGS"]
+    },
+    "fmax": {
+      "type": "number",
+      "description": "Force convergence tolerance in eV/Å.",
+      "default": 0.01
+    },
+    "steps": {
+      "type": "integer",
+      "description": "Maximum optimisation steps.",
+      "default": 500
+    },
+    "filter": {
+      "type": "string | null",
+      "description": "Cell filter for variable-cell relaxation. null keeps cell fixed.",
+      "default": null,
+      "enum": [null, "FrechetCellFilter", "ExpCellFilter"]
+    },
+    "pressure": {
+      "type": "number | null",
+      "description": "External target pressure for cell relaxation. Implies filter=FrechetCellFilter when filter is null. The value is interpreted according to pressure_unit.",
+      "default": null
+    },
+    "pressure_unit": {
+      "type": "string",
+      "description": "Unit of the pressure value. Conversion: 1 eV/Å³ = 160.2176621 GPa = 1602.176621 kbar.",
+      "default": "GPa",
+      "enum": ["GPa", "kbar", "eV/A^3"]
+    },
+    "constrain_symmetry": {
+      "type": "boolean",
+      "description": "Whether to constrain crystal symmetry during relaxation via ASE FixSymmetry. Preserves the space-group symmetry of the input structure throughout the optimisation.",
+      "default": false
+    }
+  },
+  "outputs": {
+    "relax_results.json": {
+      "type": "file",
+      "description": "Combined JSON with metadata, settings, units, and per-structure input/output (positions, cell, energy, forces, stress, convergence)."
+    },
+    "relax_NNN_FORMULA.cif": {
+      "type": "file",
+      "description": "Relaxed structure in CIF format (periodic) or XYZ format (non-periodic), one per structure."
+    },
+    "terminal_table": {
+      "type": "stdout",
+      "description": "Formatted summary table printed to the terminal."
+    }
+  }
+}
