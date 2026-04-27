@@ -26,7 +26,10 @@ def scatter_sum(
         Output tensor with scattered values summed
     """
     if dim_size is None:
-        dim_size = int(index.max().item()) + 1
+        if index.numel() == 0:
+            dim_size = 0
+        else:
+            dim_size = int(index.max().item()) + 1
 
     # Expand index to match src dimensions
     index_expanded = index
