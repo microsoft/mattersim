@@ -19,7 +19,7 @@ authors = [
     { name = "Ziheng Lu", email = "zihenglu@microsoft.com" },
 ]
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
@@ -52,6 +52,7 @@ dependencies = [
     "torchaudio>=2.2.0",
     "torchmetrics>=0.10.0",
     "torchvision>=0.17.0",
+    "torch-sim-atomistic>=0.5.0",
     "wandb",
 ]
 
