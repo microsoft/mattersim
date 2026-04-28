@@ -1413,15 +1413,20 @@ def load_mattersim(
         load_training_state=False,
     )
 
-    # Set version from the load_path for autobatcher lookups
-    if load_path and not potential.version:
-        path_lower = load_path.lower().replace(".pth", "")
-        for version_key in ["mattersim-v1.0.0-1m", "mattersim-v1.0.0-5m"]:
-            if version_key in path_lower:
-                potential.version = version_key.upper().replace(
-                    "MATTERSIM", "mattersim"
-                )
-                break
+    # Set version for autobatcher lookups.
+    # Default checkpoint (load_path=None) is mattersim-v1.0.0-1M.
+    if not potential.version:
+        if load_path is None:
+            potential.version = "mattersim-v1.0.0-1M"
+        else:
+            path_lower = load_path.lower().replace(".pth", "")
+            for version_key in ["mattersim-v1.0.0-1m", "mattersim-v1.0.0-5m"]:
+                if version_key in path_lower:
+                    # Canonical form: mattersim-v1.0.0-{1M,5M}
+                    potential.version = version_key.replace(
+                        "-1m", "-1M"
+                    ).replace("-5m", "-5M")
+                    break
 
     if gradient_checkpointing:
         potential.enable_gradient_checkpointing(True)
