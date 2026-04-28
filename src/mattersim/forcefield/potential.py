@@ -1384,3 +1384,46 @@ class MatterSimCalculator(Calculator):
             threebody_cutoff=threebody_cutoff,
             pbc=pbc,
         )
+
+
+def load_mattersim(
+    load_path: str | None = None,
+    device: str = "cuda" if torch.cuda.is_available() else "cpu",
+    gradient_checkpointing: bool = False,
+) -> Potential:
+    """Load a MatterSim potential model ready for inference.
+
+    Wraps :meth:`Potential.from_checkpoint` with additional support for
+    gradient checkpointing.
+
+    Args:
+        load_path: Path to a checkpoint file, or a model identifier such as
+            ``"mattersim-v1.0.0-1M"`` or ``"mattersim-v1.0.0-5M"``.
+            If ``None``, loads the default pre-trained model.
+        device: Device to run the model on.
+        gradient_checkpointing: Enable gradient checkpointing for
+            memory-efficient inference on large systems.
+
+    Returns:
+        Loaded Potential model ready for inference.
+    """
+    potential = Potential.from_checkpoint(
+        load_path=load_path,
+        device=device,
+        load_training_state=False,
+    )
+
+    # Set version from the load_path for autobatcher lookups
+    if load_path and not potential.version:
+        path_lower = load_path.lower().replace(".pth", "")
+        for version_key in ["mattersim-v1.0.0-1m", "mattersim-v1.0.0-5m"]:
+            if version_key in path_lower:
+                potential.version = version_key.upper().replace(
+                    "MATTERSIM", "mattersim"
+                )
+                break
+
+    if gradient_checkpointing:
+        potential.enable_gradient_checkpointing(True)
+
+    return potential
