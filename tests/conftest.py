@@ -94,3 +94,11 @@ def mattersim_calc_best_device():
     from mattersim.forcefield import MatterSimCalculator
 
     return MatterSimCalculator(device=best_device())
+
+
+@pytest.fixture(scope="module")
+def mattersim_potential_best_device():
+    """MatterSim 1M potential on the best available device (no training state)."""
+    from mattersim.forcefield.potential import Potential
+
+    return Potential.from_checkpoint(device=best_device(), load_training_state=False)
