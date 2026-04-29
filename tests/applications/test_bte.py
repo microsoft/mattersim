@@ -104,7 +104,10 @@ class TestBTEWorkflowRun:
         """Full RTA workflow should produce FC2/FC3 and correct kappa for Si."""
         from mattersim.forcefield import MatterSimCalculator
 
-        si_diamond.calc = MatterSimCalculator(device=available_device, dtype="float64")
+        si_diamond.calc = MatterSimCalculator(
+            device=available_device,
+            dtype="float32" if available_device == "mps" else "float64",
+        )
         workflow = BTEWorkflow(
             atoms=si_diamond,
             work_dir=str(tmp_path / f"bte_rta_{available_device}"),
@@ -202,12 +205,9 @@ class TestBTEWorkflowRunStrict:
         Uses float64 for numerically stable force constants."""
         from mattersim.forcefield import MatterSimCalculator
 
-        device = "cuda" if torch.cuda.is_available() else (
-            "mps" if hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
-            else "cpu"
-        )
+        device = "cuda" if torch.cuda.is_available() else "cpu"
         if device == "cpu":
-            pytest.skip("No accelerator (CUDA/MPS) available")
+            pytest.skip("Strict BTE test requires CUDA (float64 not supported on MPS)")
 
         si_diamond.calc = MatterSimCalculator(device=device, dtype="float64")
         workflow = BTEWorkflow(

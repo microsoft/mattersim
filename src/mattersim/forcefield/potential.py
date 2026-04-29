@@ -1197,9 +1197,29 @@ class MatterSimCalculator(Calculator):
                 ``"float32"`` (default) or ``"float64"`` for double
                 precision. Double precision improves numerical stability
                 for sensitive properties like thermal conductivity.
+                Note: MPS devices do not support float64.
             **kwargs:
         """
         super().__init__(**kwargs)
+
+        # Validate dtype early, before loading the model
+        _dtype_map = {
+            "float32": torch.float32,
+            "float64": torch.float64,
+        }
+        if dtype not in _dtype_map:
+            raise ValueError(
+                f"Unsupported dtype: {dtype!r}. Use 'float32' or 'float64'."
+            )
+        self.dtype = _dtype_map[dtype]
+        if (
+            self.dtype == torch.float64
+            and torch.device(device).type == "mps"
+        ):
+            raise ValueError(
+                "MPS does not support float64. Use dtype='float32' on MPS devices."
+            )
+
         if potential is None:
             self.potential = Potential.from_checkpoint(device=device, **kwargs)
         else:
@@ -1212,16 +1232,6 @@ class MatterSimCalculator(Calculator):
         self._use_direct_graph = direct_graph or compile
         self._compiled = False
 
-        # Set dtype
-        _dtype_map = {
-            "float32": torch.float32,
-            "float64": torch.float64,
-        }
-        if dtype not in _dtype_map:
-            raise ValueError(
-                f"Unsupported dtype: {dtype!r}. Use 'float32' or 'float64'."
-            )
-        self.dtype = _dtype_map[dtype]
         if self.dtype == torch.float64:
             self.potential.model.double()
 
