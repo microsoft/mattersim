@@ -4,6 +4,7 @@ workflow using phono3py.
 
 import numpy as np
 import pytest
+import torch
 
 from mattersim.applications.bte import BTEWorkflow, BTEWorkflowError
 
@@ -103,7 +104,7 @@ class TestBTEWorkflowRun:
         """Full RTA workflow should produce FC2/FC3 and correct kappa for Si."""
         from mattersim.forcefield import MatterSimCalculator
 
-        si_diamond.calc = MatterSimCalculator(device=available_device)
+        si_diamond.calc = MatterSimCalculator(device=available_device, dtype="float64")
         workflow = BTEWorkflow(
             atoms=si_diamond,
             work_dir=str(tmp_path / f"bte_rta_{available_device}"),
@@ -184,25 +185,31 @@ class TestBTEWorkflowRunStrict:
     Run with: pytest -m slow
     """
 
-    REF_FC2_NORM = 308.570
-    REF_FC3_NORM = 1647.52
+    # Reference values computed with MatterSim v1.0.0-1M in float64 precision.
+    # Verified stable across 3 runs (rel_std < 0.03%).
+    REF_FC2_NORM = 308.567
+    REF_FC3_NORM = 1647.09
 
-    REF_KAPPA_100K = 919.6
-    REF_KAPPA_200K = 228.4
-    REF_KAPPA_300K = 130.7
+    REF_KAPPA_100K = 997.8
+    REF_KAPPA_200K = 236.2
+    REF_KAPPA_300K = 133.9
 
-    # Tolerance accounts for numerical differences between scatter
-    # implementations (native PyTorch scatter_add_ vs torch_runstats).
-    # Both are mathematically correct but differ in float accumulation order.
-    KAPPA_RTOL = 0.08
+    KAPPA_RTOL = 0.02
 
-    def test_rta_strict(self, si_diamond, mattersim_calc_best_device, tmp_path):
+    def test_rta_strict(self, si_diamond, tmp_path):
         """Strict BTE test with 4x4x4 supercell and 16x16x16 q-mesh.
-        Requires CUDA or MPS — skipped on CPU-only machines."""
-        if str(mattersim_calc_best_device.device) == "cpu":
+        Requires CUDA or MPS — skipped on CPU-only machines.
+        Uses float64 for numerically stable force constants."""
+        from mattersim.forcefield import MatterSimCalculator
+
+        device = "cuda" if torch.cuda.is_available() else (
+            "mps" if hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
+            else "cpu"
+        )
+        if device == "cpu":
             pytest.skip("No accelerator (CUDA/MPS) available")
 
-        si_diamond.calc = mattersim_calc_best_device
+        si_diamond.calc = MatterSimCalculator(device=device, dtype="float64")
         workflow = BTEWorkflow(
             atoms=si_diamond,
             work_dir=str(tmp_path / "bte_strict"),
