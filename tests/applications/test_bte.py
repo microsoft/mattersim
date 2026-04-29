@@ -197,19 +197,32 @@ class TestBTEWorkflowRunStrict:
     REF_KAPPA_200K = 236.2
     REF_KAPPA_300K = 133.9
 
-    KAPPA_RTOL = 0.02
+    # Tight tolerance for float64 (CUDA), looser for float32 (MPS).
+    KAPPA_RTOL_F64 = 0.02
+    KAPPA_RTOL_F32 = 0.10
+    FC_RTOL_F64 = 1e-3
+    FC_RTOL_F32 = 5e-3
 
     def test_rta_strict(self, si_diamond, tmp_path):
         """Strict BTE test with 4x4x4 supercell and 16x16x16 q-mesh.
         Requires CUDA or MPS — skipped on CPU-only machines.
-        Uses float64 for numerically stable force constants."""
+        Uses float64 on CUDA for tight tolerances; falls back to
+        float32 on MPS with relaxed tolerances (10%)."""
         from mattersim.forcefield import MatterSimCalculator
 
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        device = "cuda" if torch.cuda.is_available() else (
+            "mps" if hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
+            else "cpu"
+        )
         if device == "cpu":
-            pytest.skip("Strict BTE test requires CUDA (float64 not supported on MPS)")
+            pytest.skip("No accelerator (CUDA/MPS) available")
 
-        si_diamond.calc = MatterSimCalculator(device=device, dtype="float64")
+        use_f64 = device != "mps"
+        dtype = "float64" if use_f64 else "float32"
+        kappa_rtol = self.KAPPA_RTOL_F64 if use_f64 else self.KAPPA_RTOL_F32
+        fc_rtol = self.FC_RTOL_F64 if use_f64 else self.FC_RTOL_F32
+
+        si_diamond.calc = MatterSimCalculator(device=device, dtype=dtype)
         workflow = BTEWorkflow(
             atoms=si_diamond,
             work_dir=str(tmp_path / "bte_strict"),
@@ -226,12 +239,12 @@ class TestBTEWorkflowRunStrict:
         assert ph3.fc2.shape == (128, 128, 3, 3)
         assert ph3.fc3.shape == (128, 128, 128, 3, 3, 3)
 
-        # Force constants norms — tight tolerance
+        # Force constants norms
         np.testing.assert_allclose(
-            np.linalg.norm(ph3.fc2), self.REF_FC2_NORM, rtol=1e-3
+            np.linalg.norm(ph3.fc2), self.REF_FC2_NORM, rtol=fc_rtol
         )
         np.testing.assert_allclose(
-            np.linalg.norm(ph3.fc3), self.REF_FC3_NORM, rtol=1e-3
+            np.linalg.norm(ph3.fc3), self.REF_FC3_NORM, rtol=fc_rtol
         )
 
         kappa = ph3.thermal_conductivity.kappa
@@ -239,19 +252,19 @@ class TestBTEWorkflowRunStrict:
 
         # T=100K
         kxx_100, kyy_100, kzz_100 = kappa[0, 0, 0], kappa[0, 0, 1], kappa[0, 0, 2]
-        np.testing.assert_allclose(kxx_100, self.REF_KAPPA_100K, rtol=self.KAPPA_RTOL)
+        np.testing.assert_allclose(kxx_100, self.REF_KAPPA_100K, rtol=kappa_rtol)
         np.testing.assert_allclose(kxx_100, kyy_100, rtol=1e-4)
         np.testing.assert_allclose(kxx_100, kzz_100, rtol=1e-4)
 
         # T=200K
         kxx_200, kyy_200, kzz_200 = kappa[0, 1, 0], kappa[0, 1, 1], kappa[0, 1, 2]
-        np.testing.assert_allclose(kxx_200, self.REF_KAPPA_200K, rtol=self.KAPPA_RTOL)
+        np.testing.assert_allclose(kxx_200, self.REF_KAPPA_200K, rtol=kappa_rtol)
         np.testing.assert_allclose(kxx_200, kyy_200, rtol=1e-4)
         np.testing.assert_allclose(kxx_200, kzz_200, rtol=1e-4)
 
         # T=300K
         kxx_300, kyy_300, kzz_300 = kappa[0, 2, 0], kappa[0, 2, 1], kappa[0, 2, 2]
-        np.testing.assert_allclose(kxx_300, self.REF_KAPPA_300K, rtol=self.KAPPA_RTOL)
+        np.testing.assert_allclose(kxx_300, self.REF_KAPPA_300K, rtol=kappa_rtol)
         np.testing.assert_allclose(kxx_300, kyy_300, rtol=1e-4)
         np.testing.assert_allclose(kxx_300, kzz_300, rtol=1e-4)
 
