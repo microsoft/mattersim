@@ -92,8 +92,8 @@ version_scheme = "guess-next-dev"
 local_scheme = "dirty-tag"
 
 [tool.cibuildwheel]
-# Limit the build to Python 3.10, 3.11, 3.12 and 3.13
-build = "cp3{10,11,12,13}-*"
+# Limit the build to Python 3.12 and 3.13
+build = "cp3{12,13}-*"
 # Use manylinux2014 for Linux wheels
 manylinux-x86_64-image = "manylinux2014"
 # Skip PyPy and all Windows/macOS builds

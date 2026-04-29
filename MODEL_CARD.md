@@ -128,7 +128,7 @@ The checkpoints released in this repository are those trained on an internal imp
 
 #### Software
 
-- Python == 3.9
+- Python >= 3.12
 
 ## Citation
 
