@@ -794,7 +794,7 @@ class Potential(nn.Module):
             # Save reference to original tensor before any reassignment
             original_atom_pos = input["atom_pos"]
             original_pos_requires_grad = original_atom_pos.requires_grad
-            strain = torch.zeros_like(input["cell"], device=self.device)
+            strain = torch.zeros_like(input["cell"])
             volume = torch.linalg.det(input["cell"])
             try:
                 if include_forces is True:
@@ -805,9 +805,7 @@ class Potential(nn.Module):
                         input["cell"],
                         (torch.eye(3, device=self.device)[None, ...] + strain),
                     )
-                    strain_augment = torch.repeat_interleave(
-                        strain, input["num_atoms"], dim=0
-                    )
+                    strain_augment = strain[input["batch"]]
                     input["atom_pos"] = torch.einsum(
                         "bi, bij -> bj",
                         input["atom_pos"],
@@ -1126,13 +1124,16 @@ class Potential(nn.Module):
 def batch_to_dict(graph_batch, model_type="m3gnet", device="cuda"):
     if model_type == "m3gnet":
         if not torch.cuda.is_available() and device != "cpu":
-            device = "cpu"
-        src_device = graph_batch.atom_pos.device
+            if not (hasattr(torch.backends, "mps") and torch.backends.mps.is_available()):
+                device = "cpu"
         target_device = torch.device(device)
-        already_on_device = src_device == target_device
+        src_device = graph_batch.atom_pos.device
+        already_on_device = src_device.type == target_device.type
 
         def _move(t):
-            return t if already_on_device else t.to(device)
+            if t is None:
+                return t
+            return t if already_on_device else t.to(target_device)
 
         num_graphs = graph_batch.num_graphs
 
