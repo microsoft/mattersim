@@ -1176,6 +1176,7 @@ class MatterSimCalculator(Calculator):
         batch_converter: bool = False,
         direct_graph: bool = False,
         compile: bool = False,
+        dtype: str = "float32",
         **kwargs,
     ):
         """
@@ -1192,6 +1193,10 @@ class MatterSimCalculator(Calculator):
             compile (bool): apply ``torch.compile`` to the model forward
                 pass. Implies ``direct_graph=True``. First call has ~5s
                 warmup, then cached for the session.
+            dtype (str): floating point precision for inference.
+                ``"float32"`` (default) or ``"float64"`` for double
+                precision. Double precision improves numerical stability
+                for sensitive properties like thermal conductivity.
             **kwargs:
         """
         super().__init__(**kwargs)
@@ -1207,8 +1212,22 @@ class MatterSimCalculator(Calculator):
         self._use_direct_graph = direct_graph or compile
         self._compiled = False
 
+        # Set dtype
+        _dtype_map = {
+            "float32": torch.float32,
+            "float64": torch.float64,
+        }
+        if dtype not in _dtype_map:
+            raise ValueError(
+                f"Unsupported dtype: {dtype!r}. Use 'float32' or 'float64'."
+            )
+        self.dtype = _dtype_map[dtype]
+        if self.dtype == torch.float64:
+            self.potential.model.double()
+
         if compile and self.potential.model_name == "m3gnet":
             import torch._inductor.config
+
 
             torch._inductor.config.fx_graph_cache = True
             self.potential.model.forward = torch.compile(
@@ -1331,6 +1350,12 @@ class MatterSimCalculator(Calculator):
             graph_batch = next(iter(dataloader))
             input = batch_to_dict(graph_batch, device=self.device)
 
+        # Upcast float tensors to match model dtype (e.g. float64)
+        if self.dtype != torch.float32:
+            for k, v in input.items():
+                if isinstance(v, torch.Tensor) and v.is_floating_point():
+                    input[k] = v.to(self.dtype)
+
         result = self.potential.forward(
             input, include_forces=True, include_stresses=self.compute_stress
         )
@@ -1363,14 +1388,10 @@ class MatterSimCalculator(Calculator):
         device = self.device
 
         pos = torch.tensor(
-            atoms.get_positions(),
-            dtype=torch.float32,
-            device=device,
+            atoms.get_positions(), dtype=self.dtype, device=device,
         )
         cell = torch.tensor(
-            np.array(atoms.cell),
-            dtype=torch.float32,
-            device=device,
+            np.array(atoms.cell), dtype=self.dtype, device=device,
         ).unsqueeze(0)
         atomic_numbers = torch.tensor(
             atoms.get_atomic_numbers(),

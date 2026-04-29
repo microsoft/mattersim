@@ -79,7 +79,7 @@ class M3Gnet(nn.Module):
         # Exact data from input_dictionary
         pos = input["atom_pos"]
         cell = input["cell"]
-        pbc_offsets = input["pbc_offsets"].float()
+        pbc_offsets = input["pbc_offsets"].to(pos.dtype)
         atom_attr = input["atom_attr"]
         edge_index = input["edge_index"].long()
         three_body_indices = input["three_body_indices"].long()
