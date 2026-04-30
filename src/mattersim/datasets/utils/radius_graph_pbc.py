@@ -151,10 +151,7 @@ def _get_radius_graph_internal(
     def dist_thresh(
         A: torch.Tensor, B: torch.Tensor, cutoff: float, _return_dist: bool = False
     ):
-        A_prime = A.to(torch.float64)
-        B_prime = B.to(torch.float64)
-        D = torch.cdist(A_prime, B_prime)
-        D = D.to(A.dtype)
+        D = torch.cdist(A, B)
         idx = torch.nonzero(D <= cutoff + 5e-6, as_tuple=False)
         if not _return_dist:
             return idx
