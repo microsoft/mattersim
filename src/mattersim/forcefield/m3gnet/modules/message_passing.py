@@ -9,6 +9,7 @@ import torch
 import torch.nn as nn
 
 from .layers import GatedMLP, LinearLayer, SigmoidLayer, SwishLayer
+from .scatter import scatter_sum
 
 
 def polynomial(r: torch.Tensor, cutoff: float) -> torch.Tensor:
@@ -66,12 +67,7 @@ class ThreeDInteraction(nn.Module):
         three_basis = three_basis * atom_mask
         num_edges_total = edge_attr.shape[0]
         index_map = three_body_index[:, 0]
-        output = torch.zeros(
-            (num_edges_total, three_basis.shape[1]),
-            device=three_basis.device,
-            dtype=three_basis.dtype,
-        )
-        e_ij_tuda = output.index_add_(0, index_map, three_basis)
+        e_ij_tuda = scatter_sum(three_basis, index_map, dim=0, dim_size=num_edges_total)
         edge_attr_prime = edge_attr + self.edge_gate_mlp(e_ij_tuda)
         return edge_attr_prime
 
@@ -111,12 +107,9 @@ class AtomLayer(nn.Module):
             dim=1,
         )
         atom_attr_prime = self.gated_mlp(feat) * self.edge_layer(edge_attr)
-        output = torch.zeros(
-            (atom_attr.shape[0], atom_attr_prime.shape[1]),
-            device=atom_attr_prime.device,
-            dtype=atom_attr_prime.dtype,
+        atom_attr_prime = scatter_sum(
+            atom_attr_prime, edge_index[1], dim=0, dim_size=atom_attr.shape[0]
         )
-        atom_attr_prime = output.index_add_(0, edge_index[1], atom_attr_prime)
         return atom_attr_prime + atom_attr
 
 
@@ -230,11 +223,8 @@ class MainBlock(nn.Module):
             dim=1,  # noqa: E501
         )
         atom_attr_prime = self.gated_mlp_atom(feat) * self.edge_layer_atom(edge_attr_zero)
-        output = torch.zeros(
-            (atom_attr.shape[0], atom_attr_prime.shape[1]),
-            device=atom_attr_prime.device,
-            dtype=atom_attr_prime.dtype,
+        atom_attr = atom_attr + scatter_sum(
+            atom_attr_prime, edge_index[0], dim=0, dim_size=atom_attr.shape[0]
         )
-        atom_attr = atom_attr + output.index_add_(0, edge_index[0], atom_attr_prime)
 
         return atom_attr, edge_attr
