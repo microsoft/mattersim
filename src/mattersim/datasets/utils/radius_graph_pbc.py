@@ -1,11 +1,11 @@
 """
 Radius graph computation with periodic boundary conditions.
 
-Provides GPU-accelerated neighbor search for atomistic systems with PBC.
-Adapted from OCP codebase and internal MatterSim implementation.
+Provides GPU-accelerated neighbor search for atomistic systems with PBC
+using a memory-efficient cdist-based approach. Some utility functions
+are adapted from the OCP codebase.
 
 Main API:
-    radius_graph_pbc: O(N² × num_cells) OCP-style implementation
     radius_graph_pbc_efficient: Memory-efficient cdist-based implementation
 """
 
@@ -77,7 +77,7 @@ def _wrap_positions(
 
 
 @torch.no_grad()
-def _get_radius_graph_internal(
+def _get_radius_graph_pbc_cdist(
     pos: torch.Tensor,
     n_nodes_per_graph: torch.Tensor,
     pbc: torch.Tensor,
@@ -378,7 +378,7 @@ def radius_graph_pbc_efficient(
     else:
         pbc_tensor = torch.atleast_2d(pbc)
 
-    result = _get_radius_graph_internal(
+    result = _get_radius_graph_pbc_cdist(
         pos=pos,
         n_nodes_per_graph=natoms,
         pbc=pbc_tensor,
