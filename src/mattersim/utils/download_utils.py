@@ -1,28 +1,46 @@
-# -*- coding: utf-8 -*-
 """
 This module contains utility functions for downloading files.
 """
+
 import os
 
 import requests
 from loguru import logger
+from tqdm import tqdm
 
 
 def download_file(url: str, output_path: str):
     """
-    A wrapper around requests.get to download a file from a URL.
+    A wrapper around requests.get to download a file from a URL,
+    with a progress bar for large files.
 
     Args:
         url (str): The URL to download the file from.
         output_path (str): The path to save the downloaded file to.
     """
 
-    logger.info(f"Downloading file from {url} to {output_path}")
-    response = requests.get(url)
-    response.raise_for_status()  # Check if the request was successful
+    logger.info(f"Downloading file from {url}")
+    response = requests.get(url, stream=True)
+    response.raise_for_status()
+
+    total_size = int(response.headers.get("content-length", 0))
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    with open(output_path, "wb") as f:
-        f.write(response.content)
+
+    with (
+        tqdm(
+            total=total_size,
+            unit="B",
+            unit_scale=True,
+            unit_divisor=1024,
+            desc=os.path.basename(output_path),
+            disable=total_size == 0,
+        ) as progress_bar,
+        open(output_path, "wb") as f,
+    ):
+        for chunk in response.iter_content(chunk_size=8192):
+            f.write(chunk)
+            progress_bar.update(len(chunk))
+
     logger.info(f"File downloaded to {output_path}")
 
 
