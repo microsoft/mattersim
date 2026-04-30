@@ -151,6 +151,12 @@ class GraphConverter:
         has_threebody: bool = True,
         threebody_cutoff: float = 4.0,
     ):
+        warnings.warn(
+            "GraphConverter is deprecated. Use BatchGraphConverter for "
+            "GPU-accelerated graph construction.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.model_type = model_type
         self.twobody_cutoff = twobody_cutoff
         self.threebody_cutoff = threebody_cutoff
