@@ -1175,6 +1175,7 @@ class MatterSimCalculator(Calculator):
         stress_weight: float = GPa,
         device: str = "cuda" if torch.cuda.is_available() else "cpu",
         batch_converter: bool = False,
+        direct_graph: bool = False,
         compile: bool = False,
         **kwargs,
     ):
@@ -1184,11 +1185,14 @@ class MatterSimCalculator(Calculator):
             compute_stress (bool): whether to calculate the stress
             stress_weight (float): the stress weight.
             batch_converter (bool): use GPU-accelerated graph construction
-                (via BatchGraphConverter). Slower than ``compile=True`` for
-                single structures because of PyG overhead.
-            compile (bool): use direct tensor graph construction (no PyG)
-                plus ``torch.compile`` for the model. Fastest option.
-                First call has ~5s warmup, then cached for the session.
+                (via BatchGraphConverter). Slower than ``direct_graph=True``
+                for single structures because of PyG overhead.
+            direct_graph (bool): use direct tensor graph construction (no
+                PyG). Useful with AOTI-compiled models that are already
+                optimized and don't need ``torch.compile``.
+            compile (bool): apply ``torch.compile`` to the model forward
+                pass. Implies ``direct_graph=True``. First call has ~5s
+                warmup, then cached for the session.
             **kwargs:
         """
         super().__init__(**kwargs)
@@ -1201,7 +1205,7 @@ class MatterSimCalculator(Calculator):
         self.args_dict = args_dict
         self.device = device
         self.batch_converter = batch_converter
-        self._use_direct_graph = compile
+        self._use_direct_graph = direct_graph or compile
         self._compiled = False
 
         if compile and self.potential.model_name == "m3gnet":
