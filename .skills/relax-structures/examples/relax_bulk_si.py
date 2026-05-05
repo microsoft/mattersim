@@ -20,7 +20,7 @@ from ase.build import bulk
 from ase.io import write as ase_write
 
 from mattersim.applications.relax import Relaxer
-from mattersim.applications.schemas import build_relax_task_doc
+from mattersim.applications.schemas import MatterSimRelaxTaskDocument
 from mattersim.forcefield import MatterSimCalculator
 
 
@@ -97,8 +97,8 @@ def main():
             eff_relaxer = relaxer
             eff_params = params_filter
 
+        initial_energy = float(a.get_potential_energy())
         initial_atoms = a.copy()
-        a.get_potential_energy()  # cache initial energy for build_relax_task_doc
 
         t0 = time.time()
         try:
@@ -111,15 +111,22 @@ def main():
             final_energy = float(relaxed.get_potential_energy())
             final_forces = relaxed.get_forces()
 
-            task_doc = build_relax_task_doc(
+            task_doc = MatterSimRelaxTaskDocument.from_relax(
                 initial_atoms=initial_atoms,
                 relaxed_atoms=relaxed,
+                initial_energy=initial_energy,
                 converged=converged,
                 elapsed=elapsed,
+                model_checkpoint=args.model,
+                device=device,
+                optimizer=args.optimizer,
                 fmax=args.fmax,
                 steps=args.steps,
-                relax_cell=is_periodic and (eff_relaxer.filter is not None),
+                relax_cell=is_periodic and eff_relaxer.relax_cell,
                 constrain_symmetry=args.constrain_symmetry,
+                filter_name=filter_name,
+                pressure=args.pressure or 0.0,
+                pressure_unit=args.pressure_unit,
             )
 
             results.append({
@@ -195,7 +202,7 @@ def main():
         if r["task_doc"] is not None:
             task_json_path = os.path.join(output_dir, f"task_{prefix}.json")
             with open(task_json_path, "w") as f:
-                f.write(r["task_doc"].model_dump_json(indent=2))
+                f.write(r["task_doc"].to_json())
 
         if "error" not in r:
             relaxed = r["relaxed_atoms"]

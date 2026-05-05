@@ -22,7 +22,7 @@ from ase.io import read as ase_read
 from ase.io import write as ase_write
 
 from mattersim.applications.relax import Relaxer
-from mattersim.applications.schemas import build_relax_task_doc
+from mattersim.applications.schemas import MatterSimRelaxTaskDocument
 from mattersim.forcefield import MatterSimCalculator
 
 
@@ -110,8 +110,8 @@ for i, atoms in enumerate(atoms_list):
 
     # Cache initial energy before relaxation (ASE reuses it at step 0,
     # so no extra forward pass is incurred).
+    initial_energy = float(atoms.get_potential_energy())
     initial_atoms = atoms.copy()
-    atoms.get_potential_energy()
 
     t0 = time.time()
     try:
@@ -124,15 +124,22 @@ for i, atoms in enumerate(atoms_list):
         final_forces = relaxed.get_forces()
         final_energy = float(relaxed.get_potential_energy())
 
-        task_doc = build_relax_task_doc(
+        task_doc = MatterSimRelaxTaskDocument.from_relax(
             initial_atoms=initial_atoms,
             relaxed_atoms=relaxed,
+            initial_energy=initial_energy,
             converged=converged,
             elapsed=elapsed,
+            model_checkpoint=model_name,
+            device=device,
+            optimizer=optimizer,
             fmax=fmax,
             steps=steps,
-            relax_cell=is_periodic and (eff_relaxer.filter is not None),
+            relax_cell=is_periodic and eff_relaxer.relax_cell,
             constrain_symmetry=constrain_symmetry,
+            filter_name=filter_name,
+            pressure=pressure or 0.0,
+            pressure_unit=pressure_unit,
         )
 
         result = {
@@ -216,7 +223,7 @@ for r in results:
     if r["task_doc"] is not None:
         task_json_path = os.path.join(output_dir, f"task_{prefix}.json")
         with open(task_json_path, "w") as f:
-            f.write(r["task_doc"].model_dump_json(indent=2))
+            f.write(r["task_doc"].to_json())
 
     # --- Structure file (CIF for periodic, XYZ for non-periodic) ---
     if "error" not in r:
