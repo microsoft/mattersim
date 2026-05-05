@@ -28,6 +28,8 @@ dependencies:
   - ase
   - torch
   - numpy
+  - atomate2
+  - pymatgen
 authors:
   - MatterSim Team
 ---
@@ -94,27 +96,43 @@ All outputs are written to `mattersim_relax_results/<timestamp>/`:
 
 | File | Description |
 |------|-------------|
-| `relax_results.json` | Combined JSON with metadata, units, and all per-structure results |
+| `task_NNN_FORMULA.json` | `ForceFieldTaskDocument` JSON (atomate2 / Materials Project compatible) per structure |
 | `relax_NNN_FORMULA.cif` | Relaxed structure (CIF for periodic, XYZ for non-periodic) |
 | *(terminal)* | Formatted summary table |
 
-### JSON schema
+### Output schema
+
+Each `task_NNN_FORMULA.json` is a serialised
+[`ForceFieldTaskDocument`](https://github.com/materialsproject/atomate2/blob/main/src/atomate2/forcefields/schemas.py)
+(from `atomate2.forcefields.schemas`), which extends `AseStructureTaskDoc`
+from the atomate2 / emmet-core ecosystem.
+
+Key fields:
 
 ```
-relax_results.json
-├── schema_version: "1.0"
-├── task: "structure_relaxation"
-├── metadata: { model, device, optimizer, filter, fmax, steps, pressure,
-│               timestamp, n_structures, n_converged }
-├── units: { energy: "eV", forces: "eV/Å", stress: "GPa",
-│            positions: "Å", cell: "Å" }
-└── structures[]:
-    ├── index
-    ├── input: { formula, n_atoms, pbc, cell, symbols, positions }
-    └── result: { converged, energy_eV, energy_per_atom_eV, max_force,
-                  rms_force, stress_GPa, cell, symbols, positions, forces,
-                  elapsed_seconds, error? }
+ForceFieldTaskDocument
+├── output
+│   ├── energy          — final total energy (eV)
+│   ├── energy_per_atom — final energy per atom (eV/atom)
+│   ├── forces          — final forces (eV/Å), shape (N, 3)
+│   ├── stress          — final stress (kbar), shape (3, 3) symmetric
+│   └── ionic_steps[]   — [initial, final] frames with energy and forces
+├── input
+│   ├── structure       — input pymatgen Structure / Molecule
+│   ├── relax_cell      — whether cell vectors were relaxed
+│   └── fix_symmetry    — whether symmetry was constrained
+├── forcefield_name     — "MatterSim"
+├── forcefield_version  — mattersim package version
+└── converged           — True if fmax criterion was met
 ```
+
+Stress units: **kbar** (3×3 symmetric matrix). The template passes
+`relaxed.get_stress()` (eV/Å³ Voigt 6-vector) to the trajectory, and
+`ForceFieldTaskDocument` converts via `convert_stress_from_voigt_to_symm`
+automatically.
+
+Non-periodic structures (molecules) produce a
+`ForceFieldMoleculeTaskDocument` with no stress field.
 
 ---
 

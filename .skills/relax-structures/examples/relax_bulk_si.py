@@ -10,7 +10,6 @@ Usage:
 """
 
 import argparse
-import json
 import os
 import time
 from datetime import datetime, timezone
@@ -19,9 +18,9 @@ import numpy as np
 import torch
 from ase.build import bulk
 from ase.io import write as ase_write
-from ase.units import GPa as GPa_unit
 
 from mattersim.applications.relax import Relaxer
+from mattersim.applications.schemas import build_relax_task_doc
 from mattersim.forcefield import MatterSimCalculator
 
 
@@ -86,31 +85,74 @@ def main():
     results = []
 
     for i, a in enumerate(atoms_list):
-        t0 = time.time()
-        converged, relaxed = relaxer.relax(
-            a, steps=args.steps, fmax=args.fmax,
-            params_filter=params_filter, verbose=False,
-        )
-        elapsed = time.time() - t0
-        forces = relaxed.get_forces()
-        energy = relaxed.get_potential_energy()
-        stress_voigt = relaxed.get_stress()
+        is_periodic = all(a.pbc)
 
-        results.append({
-            "index": i,
-            "formula": relaxed.get_chemical_formula(),
-            "converged": converged,
-            "energy_eV": float(energy),
-            "energy_per_atom_eV": float(energy / len(relaxed)),
-            "max_force_eV_per_A": float(np.max(np.linalg.norm(forces, axis=1))),
-            "rms_force_eV_per_A": float(np.sqrt(np.mean(forces**2))),
-            "stress_GPa": (stress_voigt / GPa_unit).tolist(),
-            "n_atoms": len(relaxed),
-            "elapsed_seconds": round(elapsed, 2),
-            "relaxed_atoms": relaxed,
-        })
+        if not is_periodic:
+            eff_relaxer = Relaxer(
+                optimizer=args.optimizer, filter=None,
+                constrain_symmetry=args.constrain_symmetry,
+            )
+            eff_params = {}
+        else:
+            eff_relaxer = relaxer
+            eff_params = params_filter
+
+        initial_atoms = a.copy()
+        a.get_potential_energy()  # cache initial energy for build_relax_task_doc
+
+        t0 = time.time()
+        try:
+            converged, relaxed = eff_relaxer.relax(
+                a, steps=args.steps, fmax=args.fmax,
+                params_filter=eff_params, verbose=False,
+            )
+            elapsed = time.time() - t0
+
+            final_energy = float(relaxed.get_potential_energy())
+            final_forces = relaxed.get_forces()
+
+            task_doc = build_relax_task_doc(
+                initial_atoms=initial_atoms,
+                relaxed_atoms=relaxed,
+                converged=converged,
+                elapsed=elapsed,
+                fmax=args.fmax,
+                steps=args.steps,
+                relax_cell=is_periodic and (eff_relaxer.filter is not None),
+                constrain_symmetry=args.constrain_symmetry,
+            )
+
+            results.append({
+                "index": i,
+                "formula": relaxed.get_chemical_formula(),
+                "converged": converged,
+                "energy_eV": final_energy,
+                "energy_per_atom_eV": final_energy / len(relaxed),
+                "max_force_eV_per_A": float(np.max(np.linalg.norm(final_forces, axis=1))),
+                "rms_force_eV_per_A": float(np.sqrt(np.mean(final_forces**2))),
+                "n_atoms": len(relaxed),
+                "elapsed_seconds": round(elapsed, 2),
+                "relaxed_atoms": relaxed,
+                "task_doc": task_doc,
+            })
+
+        except RuntimeError as e:
+            elapsed = time.time() - t0
+            results.append({
+                "index": i,
+                "formula": a.get_chemical_formula(),
+                "converged": False,
+                "error": str(e),
+                "elapsed_seconds": round(elapsed, 2),
+                "relaxed_atoms": a,
+                "task_doc": None,
+            })
+            if "out of memory" in str(e).lower() and torch.cuda.is_available():
+                torch.cuda.empty_cache()
 
     # --- Print results ---
+    n_converged = sum(1 for r in results if r.get("converged"))
+
     print("\n" + "=" * 80)
     print("STRUCTURE RELAXATION RESULTS")
     print("=" * 80)
@@ -128,12 +170,16 @@ def main():
     print("-" * 80)
 
     for r in results:
-        conv = "  ✓" if r["converged"] else "  ✗"
-        print(f"{r['index']:>3} {r['formula']:<16} {conv:>5} "
-              f"{r['energy_eV']:>14.6f} {r['energy_per_atom_eV']:>13.6f} "
-              f"{r['max_force_eV_per_A']:>13.6f} {r['elapsed_seconds']:>9.1f}")
+        if "error" in r:
+            print(f"{r['index']:>3} {r['formula']:<16} {'ERR':>5} {'—':>14} "
+                  f"{'—':>13} {'—':>13} {r['elapsed_seconds']:>9.1f}"
+                  f"  ⚠ {r['error'][:40]}")
+        else:
+            conv = "  ✓" if r["converged"] else "  ✗"
+            print(f"{r['index']:>3} {r['formula']:<16} {conv:>5} "
+                  f"{r['energy_eV']:>14.6f} {r['energy_per_atom_eV']:>13.6f} "
+                  f"{r['max_force_eV_per_A']:>13.6f} {r['elapsed_seconds']:>9.1f}")
 
-    n_converged = sum(1 for r in results if r.get("converged"))
     print("=" * 80)
     print(f"Converged: {n_converged}/{len(results)}")
 
@@ -142,73 +188,21 @@ def main():
     output_dir = args.output_dir or os.path.join("mattersim_relax_results", timestamp)
     os.makedirs(output_dir, exist_ok=True)
 
-    output_data = {
-        "schema_version": "1.0",
-        "task": "structure_relaxation",
-        "metadata": {
-            "model": args.model,
-            "device": device,
-            "optimizer": args.optimizer,
-            "filter": filter_name,
-            "fmax_eV_per_A": args.fmax,
-            "max_steps": args.steps,
-            "pressure": args.pressure,
-            "pressure_unit": args.pressure_unit,
-            "constrain_symmetry": args.constrain_symmetry,
-            "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-            "n_structures": len(results),
-            "n_converged": n_converged,
-        },
-        "units": {
-            "energy": "eV",
-            "forces": "eV/Å",
-            "stress": "GPa",
-            "positions": "Å",
-            "cell": "Å",
-        },
-        "structures": [],
-    }
-
     for r in results:
-        idx = r["index"]
-        relaxed = r["relaxed_atoms"]
-        entry = {
-            "index": idx,
-            "input": {
-                "formula": atoms_list[idx].get_chemical_formula(),
-                "n_atoms": len(atoms_list[idx]),
-                "pbc": atoms_list[idx].pbc.tolist(),
-                "cell": atoms_list[idx].cell.tolist(),
-                "symbols": list(atoms_list[idx].symbols),
-                "positions": atoms_list[idx].positions.tolist(),
-            },
-            "result": {
-                "converged": r["converged"],
-                "energy_eV": r["energy_eV"],
-                "energy_per_atom_eV": r["energy_per_atom_eV"],
-                "max_force_eV_per_A": r["max_force_eV_per_A"],
-                "rms_force_eV_per_A": r["rms_force_eV_per_A"],
-                "stress_GPa": r["stress_GPa"],
-                "elapsed_seconds": r["elapsed_seconds"],
-                "n_atoms": len(relaxed),
-                "formula": relaxed.get_chemical_formula(),
-                "pbc": relaxed.pbc.tolist(),
-                "cell": relaxed.cell.tolist(),
-                "symbols": list(relaxed.symbols),
-                "positions": relaxed.positions.tolist(),
-                "forces": relaxed.get_forces().tolist(),
-            },
-        }
-        output_data["structures"].append(entry)
-
-    with open(os.path.join(output_dir, "relax_results.json"), "w") as f:
-        json.dump(output_data, f, indent=2)
-
-    for r in results:
-        relaxed = r["relaxed_atoms"]
         stem = r["formula"].replace(" ", "")
-        ase_write(os.path.join(output_dir, f"relax_{r['index']:03d}_{stem}.cif"),
-                  relaxed)
+        prefix = f"{r['index']:03d}_{stem}"
+
+        if r["task_doc"] is not None:
+            task_json_path = os.path.join(output_dir, f"task_{prefix}.json")
+            with open(task_json_path, "w") as f:
+                f.write(r["task_doc"].model_dump_json(indent=2))
+
+        if "error" not in r:
+            relaxed = r["relaxed_atoms"]
+            if all(relaxed.pbc):
+                ase_write(os.path.join(output_dir, f"relax_{prefix}.cif"), relaxed)
+            else:
+                ase_write(os.path.join(output_dir, f"relax_{prefix}.xyz"), relaxed)
 
     print(f"Results saved to: {output_dir}/")
     for fn in sorted(os.listdir(output_dir)):

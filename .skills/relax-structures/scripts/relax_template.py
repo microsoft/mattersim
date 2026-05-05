@@ -7,9 +7,11 @@ the structure construction, model selection, and relaxation parameters as needed
 This script is NOT meant to be run directly — see examples/relax_bulk_si.py for
 a runnable example. This file serves as the canonical template that agents copy
 and adapt.
+
+Output format: one ForceFieldTaskDocument JSON per structure, compatible with
+the atomate2 / Materials Project ecosystem.
 """
 
-import json
 import os
 import time
 from datetime import datetime, timezone
@@ -18,9 +20,9 @@ import numpy as np
 import torch
 from ase.io import read as ase_read
 from ase.io import write as ase_write
-from ase.units import GPa as GPa_unit
 
 from mattersim.applications.relax import Relaxer
+from mattersim.applications.schemas import build_relax_task_doc
 from mattersim.forcefield import MatterSimCalculator
 
 
@@ -93,8 +95,10 @@ relaxer = Relaxer(
 
 results = []
 for i, atoms in enumerate(atoms_list):
+    is_periodic = all(atoms.pbc)
+
     # Disable cell filter for non-periodic structures
-    if not all(atoms.pbc):
+    if not is_periodic:
         eff_relaxer = Relaxer(
             optimizer=optimizer, filter=None,
             constrain_symmetry=constrain_symmetry,
@@ -104,6 +108,11 @@ for i, atoms in enumerate(atoms_list):
         eff_relaxer = relaxer
         eff_params = params_filter
 
+    # Cache initial energy before relaxation (ASE reuses it at step 0,
+    # so no extra forward pass is incurred).
+    initial_atoms = atoms.copy()
+    atoms.get_potential_energy()
+
     t0 = time.time()
     try:
         converged, relaxed = eff_relaxer.relax(
@@ -111,24 +120,34 @@ for i, atoms in enumerate(atoms_list):
             params_filter=eff_params, verbose=False,
         )
         elapsed = time.time() - t0
-        forces = relaxed.get_forces()
-        energy = relaxed.get_potential_energy()
+
+        final_forces = relaxed.get_forces()
+        final_energy = float(relaxed.get_potential_energy())
+
+        task_doc = build_relax_task_doc(
+            initial_atoms=initial_atoms,
+            relaxed_atoms=relaxed,
+            converged=converged,
+            elapsed=elapsed,
+            fmax=fmax,
+            steps=steps,
+            relax_cell=is_periodic and (eff_relaxer.filter is not None),
+            constrain_symmetry=constrain_symmetry,
+        )
+
         result = {
             "index": i,
             "formula": relaxed.get_chemical_formula(),
             "converged": converged,
-            "energy_eV": float(energy),
-            "energy_per_atom_eV": float(energy / len(relaxed)),
-            "max_force_eV_per_A": float(np.max(np.linalg.norm(forces, axis=1))),
-            "rms_force_eV_per_A": float(np.sqrt(np.mean(forces**2))),
+            "energy_eV": final_energy,
+            "energy_per_atom_eV": final_energy / len(relaxed),
+            "max_force_eV_per_A": float(np.max(np.linalg.norm(final_forces, axis=1))),
+            "rms_force_eV_per_A": float(np.sqrt(np.mean(final_forces**2))),
             "n_atoms": len(relaxed),
             "elapsed_seconds": round(elapsed, 2),
             "relaxed_atoms": relaxed,
+            "task_doc": task_doc,
         }
-        if all(relaxed.pbc):
-            result["stress_GPa"] = (relaxed.get_stress() / GPa_unit).tolist()
-        else:
-            result["stress_GPa"] = None
 
     except RuntimeError as e:
         elapsed = time.time() - t0
@@ -139,6 +158,7 @@ for i, atoms in enumerate(atoms_list):
             "error": str(e),
             "elapsed_seconds": round(elapsed, 2),
             "relaxed_atoms": atoms,
+            "task_doc": None,
         }
         if "out of memory" in str(e).lower() and torch.cuda.is_available():
             torch.cuda.empty_cache()
@@ -188,82 +208,23 @@ timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
 output_dir = os.path.join("mattersim_relax_results", timestamp)
 os.makedirs(output_dir, exist_ok=True)
 
-# --- Combined JSON ---
-output_data = {
-    "schema_version": "1.0",
-    "task": "structure_relaxation",
-    "metadata": {
-        "model": model_name,
-        "device": device,
-        "optimizer": optimizer,
-        "filter": filter_name,
-        "fmax_eV_per_A": fmax,
-        "max_steps": steps,
-        "pressure": pressure,
-        "pressure_unit": pressure_unit,
-        "constrain_symmetry": constrain_symmetry,
-        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-        "n_structures": len(results),
-        "n_converged": n_converged,
-    },
-    "units": {
-        "energy": "eV",
-        "forces": "eV/Å",
-        "stress": "GPa",
-        "positions": "Å",
-        "cell": "Å",
-    },
-    "structures": [],
-}
-
 for r in results:
-    idx = r["index"]
-    relaxed = r["relaxed_atoms"]
-    entry = {
-        "index": idx,
-        "input": {
-            "formula": atoms_list[idx].get_chemical_formula(),
-            "n_atoms": len(atoms_list[idx]),
-            "pbc": atoms_list[idx].pbc.tolist(),
-            "cell": atoms_list[idx].cell.tolist(),
-            "symbols": list(atoms_list[idx].symbols),
-            "positions": atoms_list[idx].positions.tolist(),
-        },
-        "result": {
-            "converged": r.get("converged", False),
-            "energy_eV": r.get("energy_eV"),
-            "energy_per_atom_eV": r.get("energy_per_atom_eV"),
-            "max_force_eV_per_A": r.get("max_force_eV_per_A"),
-            "rms_force_eV_per_A": r.get("rms_force_eV_per_A"),
-            "stress_GPa": r.get("stress_GPa"),
-            "elapsed_seconds": r.get("elapsed_seconds"),
-            "error": r.get("error"),
-            "n_atoms": len(relaxed),
-            "formula": relaxed.get_chemical_formula(),
-            "pbc": relaxed.pbc.tolist(),
-            "cell": relaxed.cell.tolist(),
-            "symbols": list(relaxed.symbols),
-            "positions": relaxed.positions.tolist(),
-        },
-    }
-    if "error" not in r:
-        entry["result"]["forces"] = relaxed.get_forces().tolist()
-    output_data["structures"].append(entry)
+    stem = r["formula"].replace(" ", "")
+    prefix = f"{r['index']:03d}_{stem}"
 
-with open(os.path.join(output_dir, "relax_results.json"), "w") as f:
-    json.dump(output_data, f, indent=2)
+    # --- ForceFieldTaskDocument JSON (atomate2-compatible) ---
+    if r["task_doc"] is not None:
+        task_json_path = os.path.join(output_dir, f"task_{prefix}.json")
+        with open(task_json_path, "w") as f:
+            f.write(r["task_doc"].model_dump_json(indent=2))
 
-# --- Structure files ---
-for r in results:
+    # --- Structure file (CIF for periodic, XYZ for non-periodic) ---
     if "error" not in r:
         relaxed = r["relaxed_atoms"]
-        stem = r["formula"].replace(" ", "")
         if all(relaxed.pbc):
-            ase_write(os.path.join(output_dir, f"relax_{r['index']:03d}_{stem}.cif"),
-                      relaxed)
+            ase_write(os.path.join(output_dir, f"relax_{prefix}.cif"), relaxed)
         else:
-            ase_write(os.path.join(output_dir, f"relax_{r['index']:03d}_{stem}.xyz"),
-                      relaxed)
+            ase_write(os.path.join(output_dir, f"relax_{prefix}.xyz"), relaxed)
 
 print(f"Results saved to: {output_dir}/")
 for fn in sorted(os.listdir(output_dir)):
