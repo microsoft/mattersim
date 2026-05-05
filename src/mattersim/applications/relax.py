@@ -42,12 +42,11 @@ class Relaxer(object):
             else optimizer
         )
         self.relax_cell = filter is not None
-        if filter is not None:
-            self.filter = (
-                self.SUPPORTED_FILTERS[filter.upper()]
-                if isinstance(filter, str)
-                else filter
-            )
+        self.filter = (
+            self.SUPPORTED_FILTERS[filter.upper()]
+            if isinstance(filter, str)
+            else filter
+        ) if filter is not None else None
         self.constrain_symmetry = constrain_symmetry
         self.fix_axis = fix_axis
 
