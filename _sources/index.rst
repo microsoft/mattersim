@@ -83,4 +83,5 @@ Frequently Asked Questions
    user_guide/installation
    user_guide/getting_started
    user_guide/finetune
+   user_guide/lammps
    examples/examples
