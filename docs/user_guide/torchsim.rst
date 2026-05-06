@@ -90,9 +90,7 @@ You can also customize convergence criteria using
 .. code-block:: python
     :linenos:
 
-    convergence_fn = ts.generate_force_convergence_fn(
-        fmax=0.01, include_cell_forces=True
-    )
+    convergence_fn = ts.generate_force_convergence_fn(force_tol=0.01)
 
     relaxed_state = ts.optimize(
         system=state,
