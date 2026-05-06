@@ -9,13 +9,14 @@ from __future__ import annotations
 import logging
 from typing import Union
 
+import torch
+
 from mattersim.forcefield.aoti_compile import (
     AOTISettings,
     compile_m3gnet_aoti,
     load_aoti_model,
 )
 from mattersim.forcefield.potential import Potential, load_mattersim
-from mattersim.torchsim.settings import DTYPE
 from mattersim.torchsim.torchsim_wrapper import TorchSimWrapper
 
 LOG = logging.getLogger(__name__)
@@ -94,7 +95,7 @@ def get_torchsim_wrapper(
     return TorchSimWrapper(
         model=potential,
         device=device,
-        dtype=DTYPE,
+        dtype=torch.float64,
         sanitize_nan=sanitize_nan,
         max_neighbors=max_neighbors,
     )
