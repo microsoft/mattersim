@@ -1212,10 +1212,7 @@ class MatterSimCalculator(Calculator):
                 f"Unsupported dtype: {dtype!r}. Use 'float32' or 'float64'."
             )
         self.dtype = _dtype_map[dtype]
-        if (
-            self.dtype == torch.float64
-            and torch.device(device).type == "mps"
-        ):
+        if self.dtype == torch.float64 and torch.device(device).type == "mps":
             raise ValueError(
                 "MPS does not support float64. Use dtype='float32' on MPS devices."
             )
@@ -1236,10 +1233,9 @@ class MatterSimCalculator(Calculator):
             self.potential.model.double()
 
         if compile and self.potential.model_name == "m3gnet":
-            import torch._inductor.config
+            import torch._inductor.config as inductor_config
 
-
-            torch._inductor.config.fx_graph_cache = True
+            inductor_config.fx_graph_cache = True
             self.potential.model.forward = torch.compile(
                 self.potential.model.forward,
             )
@@ -1398,10 +1394,14 @@ class MatterSimCalculator(Calculator):
         device = self.device
 
         pos = torch.tensor(
-            atoms.get_positions(), dtype=self.dtype, device=device,
+            atoms.get_positions(),
+            dtype=self.dtype,
+            device=device,
         )
         cell = torch.tensor(
-            np.array(atoms.cell), dtype=self.dtype, device=device,
+            np.array(atoms.cell),
+            dtype=self.dtype,
+            device=device,
         ).unsqueeze(0)
         atomic_numbers = torch.tensor(
             atoms.get_atomic_numbers(),
