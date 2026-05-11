@@ -1260,9 +1260,13 @@ class MatterSimCalculator(Calculator):
         model_args = state.pop("_model_args")
         model_name = state.pop("_model_name")
         self.__dict__.update(state)
+        if "dtype" not in self.__dict__:
+            self.dtype = torch.float32
 
         # Rebuild potential for inference only
         self.potential = Potential.from_checkpoint(device=self.device)
+        if self.dtype == torch.float64:
+            self.potential.model.double()
         self.potential.model.load_state_dict(model_state_dict)
         self.potential.model.eval()
 

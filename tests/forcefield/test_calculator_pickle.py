@@ -11,6 +11,7 @@ import pickle
 
 import numpy as np
 import pytest
+import torch
 
 from mattersim.forcefield import MatterSimCalculator
 
@@ -82,3 +83,14 @@ class TestMatterSimCalculatorPickle:
         energy2 = atoms2.get_potential_energy()
 
         np.testing.assert_allclose(energy2, ref_energy, atol=1e-5)
+
+    def test_pickle_roundtrip_preserves_float64_dtype(self, available_device):
+        """Float64 calculators should remain float64 after pickling."""
+        if available_device == "mps":
+            pytest.skip("MPS does not support float64")
+
+        calc = MatterSimCalculator(device=available_device, dtype="float64")
+        restored = pickle.loads(pickle.dumps(calc))
+
+        assert restored.dtype == torch.float64
+        assert next(restored.potential.model.parameters()).dtype == torch.float64
