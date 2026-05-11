@@ -9,8 +9,6 @@ from __future__ import annotations
 import logging
 from typing import Union
 
-import torch
-
 from mattersim.forcefield.aoti_compile import (
     AOTISettings,
     compile_m3gnet_aoti,
@@ -94,6 +92,5 @@ def get_torchsim_wrapper(
     return TorchSimWrapper(
         model=potential,
         device=device,
-        dtype=torch.float64,
         max_neighbors=max_neighbors,
     )

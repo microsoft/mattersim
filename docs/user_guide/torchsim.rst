@@ -41,7 +41,7 @@ You can also construct the wrapper directly if you need full control:
     from mattersim.forcefield import Potential
 
     potential = Potential.from_checkpoint(device=device)
-    wrapper = TorchSimWrapper(model=potential, device=device, dtype=torch.float64)
+    wrapper = TorchSimWrapper(model=potential, device=device)
 
 
 Structure relaxation
@@ -69,7 +69,7 @@ TorchSim provides several optimizers for structure relaxation, including
     si.positions += 0.1 * np.random.randn(len(si), 3)
 
     # Initialize a TorchSim state from the ASE Atoms object
-    state = ts.initialize_state([si], device=device, dtype=torch.float64)
+    state = ts.initialize_state([si], device=device)
 
     # Run relaxation with the FIRE optimizer
     relaxed_state = ts.optimize(
@@ -123,7 +123,7 @@ Below we demonstrate NVT dynamics using a Langevin thermostat.
 
     # Set up the structure
     si = bulk("Si", "diamond", a=5.43)
-    state = ts.initialize_state([si], device=device, dtype=torch.float64)
+    state = ts.initialize_state([si], device=device)
 
     # Run NVT MD at 300 K for 1000 steps
     final_state = ts.integrate(
@@ -166,7 +166,7 @@ using a ``TrajectoryReporter``.
     wrapper = get_torchsim_wrapper(potential="mattersim-v1.0.0-1M", device=device)
 
     si = bulk("Si", "diamond", a=5.43)
-    state = ts.initialize_state([si], device=device, dtype=torch.float64)
+    state = ts.initialize_state([si], device=device)
 
     # Configure a trajectory reporter to save every 100 steps
     reporter = ts.TrajectoryReporter(
