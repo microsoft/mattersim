@@ -16,7 +16,7 @@ from mattersim.forcefield.aoti_compile import (
     compile_m3gnet_aoti,
     load_aoti_model,
 )
-from mattersim.forcefield.potential import Potential, load_mattersim
+from mattersim.forcefield.potential import Potential
 from mattersim.torchsim.torchsim_wrapper import TorchSimWrapper
 
 LOG = logging.getLogger(__name__)
@@ -81,14 +81,16 @@ def get_torchsim_wrapper(
         potential._max_neighbors = max_neighbors
         return potential
     if potential is None:
-        potential = load_mattersim(
-            gradient_checkpointing=gradient_checkpointing,
-        )
+        potential = Potential.from_checkpoint(load_training_state=False)
+        if gradient_checkpointing:
+            potential.enable_gradient_checkpointing(True)
     elif isinstance(potential, str):
-        potential = load_mattersim(
-            potential,
-            gradient_checkpointing=gradient_checkpointing,
+        potential = Potential.from_checkpoint(
+            load_path=potential,
+            load_training_state=False,
         )
+        if gradient_checkpointing:
+            potential.enable_gradient_checkpointing(True)
     elif gradient_checkpointing:
         potential.enable_gradient_checkpointing(True)
     _apply_aoti(potential, aoti)
