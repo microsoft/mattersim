@@ -33,7 +33,6 @@ dependencies = [
     "deprecated",
     "e3nn>=0.5.0",
     "atomate2",
-    "emmet-core>=0.84",
     "loguru",
     "mp-api",
     "numpy>=2.0.0",
