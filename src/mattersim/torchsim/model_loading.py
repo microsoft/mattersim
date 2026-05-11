@@ -54,7 +54,6 @@ def get_torchsim_wrapper(
     device: str,
     gradient_checkpointing: bool = False,
     aoti: AOTISettings = AOTISettings(enabled=False),
-    sanitize_nan: bool = False,
     max_neighbors: int = 0,
 ) -> TorchSimWrapper:
     """Get a TorchSimWrapper from various potential inputs.
@@ -71,13 +70,11 @@ def get_torchsim_wrapper(
         device: Device to run the model on.
         gradient_checkpointing: Enable gradient checkpointing.
         aoti: AOTI compilation settings.
-        sanitize_nan: When True, replace non-finite model outputs with NaN.
         max_neighbors: Maximum number of neighbors per atom. 0 = no limit.
     """
     if isinstance(potential, TorchSimWrapper):
         if gradient_checkpointing:
             potential.model.enable_gradient_checkpointing(True)
-        potential._sanitize_nan = sanitize_nan
         potential._max_neighbors = max_neighbors
         return potential
     if potential is None:
@@ -98,6 +95,5 @@ def get_torchsim_wrapper(
         model=potential,
         device=device,
         dtype=torch.float64,
-        sanitize_nan=sanitize_nan,
         max_neighbors=max_neighbors,
     )

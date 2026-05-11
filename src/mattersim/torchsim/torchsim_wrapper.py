@@ -38,7 +38,6 @@ class TorchSimWrapper(ModelInterface):
         *,
         device: torch.device | str | None = None,
         dtype: torch.dtype | None = None,
-        sanitize_nan: bool = False,
         max_neighbors: int = 0,
     ) -> None:
         """Initialize the TorchSimWrapper.
@@ -49,10 +48,6 @@ class TorchSimWrapper(ModelInterface):
             dtype: Data type for outputs and optimizer state.
                 The model weights always stay in float32; only the outputs are
                 cast to this dtype.
-            sanitize_nan: When True, detect non-finite (NaN/Inf) model outputs
-                and replace all outputs with NaN for affected systems.  The NaN
-                energy signals the convergence function to remove the affected
-                systems from the batch.  Requires ``steps_between_swaps=1``.
             max_neighbors: Maximum number of neighbors per atom in the radius
                 graph.  0 means no limit.
         """
@@ -68,7 +63,6 @@ class TorchSimWrapper(ModelInterface):
         self._memory_scales_with = "n_atoms_x_density"
         self._compute_stress = True
         self._compute_forces = True
-        self._sanitize_nan = sanitize_nan
         self._max_neighbors = max_neighbors
 
         self.model = model.to(self._device)
@@ -90,55 +84,6 @@ class TorchSimWrapper(ModelInterface):
             "forces",
             "stress",
         ]
-
-    @staticmethod
-    def _sanitize_outputs(
-        output: dict[str, torch.Tensor],
-        system_idx: torch.Tensor,
-        n_systems: int,
-    ) -> dict[str, torch.Tensor]:
-        """Replace non-finite outputs with NaN for affected systems.
-
-        Detects systems whose model outputs contain NaN or Inf values
-        (e.g. from overlapping atoms) and sets all their outputs to NaN.
-        The NaN energy signals convergence checks to remove the system
-        from the batch.
-        """
-        bad_forces = ~torch.isfinite(output["forces"]).all(dim=-1)
-        bad_energy = ~torch.isfinite(output["energy"])
-
-        bad_systems = bad_energy.clone()
-        if bad_forces.any():
-            bad_per_system = torch.zeros(
-                n_systems, dtype=torch.long, device=bad_forces.device
-            )
-            bad_per_system.scatter_reduce_(
-                0, system_idx, bad_forces.long(), reduce="amax"
-            )
-            bad_systems |= bad_per_system.bool()
-
-        if "stress" in output:
-            bad_stress = ~torch.isfinite(output["stress"]).all(dim=(1, 2))
-            bad_systems |= bad_stress
-
-        if not bad_systems.any():
-            return output
-
-        LOG.warning(
-            f"{bad_systems.sum().item()} system(s) have non-finite model outputs; "
-            "setting energy, forces, and stress to NaN."
-        )
-
-        bad_atoms = bad_systems[system_idx]
-        # Set forces & stress to zero (not NaN) so the state stays healthy
-        # until the first convergence check, where we then remove it based
-        # on NaN energy.
-        output["forces"][bad_atoms] = 0.0
-        output["energy"][bad_systems] = float("nan")
-        if "stress" in output:
-            output["stress"][bad_systems] = 0.0
-
-        return output
 
     def forward(self, state: ts.SimState) -> dict[str, torch.Tensor]:
         """Perform forward pass to compute energies, forces, and stresses.
@@ -183,19 +128,11 @@ class TorchSimWrapper(ModelInterface):
 
         output = {
             "energy": result["total_energy"].to(dtype=output_dtype).detach(),
-            "forces": (
-                result["forces"].to(dtype=output_dtype).detach().reshape(-1, 3)
-            ),
+            "forces": (result["forces"].to(dtype=output_dtype).detach().reshape(-1, 3)),
             "stress": (
                 self.GPa_to_eV_per_A3
-                * result["stresses"]
-                .to(dtype=output_dtype)
-                .detach()
-                .reshape(-1, 3, 3)
+                * result["stresses"].to(dtype=output_dtype).detach().reshape(-1, 3, 3)
             ),
         }
-
-        if self._sanitize_nan:
-            self._sanitize_outputs(output, state.system_idx, state.n_systems)
 
         return output
