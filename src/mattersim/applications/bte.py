@@ -224,7 +224,7 @@ class BTEWorkflow(object):
             second_force_sets.append(pa_second.get_forces())
 
         phonon3.phonon_forces = second_force_sets
-        phonon3.produce_fc2(symmetrize_fc2=True)
+        phonon3.produce_fc2(symmetrize_fc2=True, is_compact_fc=False)
 
         # Compute 3rd force constants
         third_scs = phonon3.supercells_with_displacements
@@ -237,7 +237,7 @@ class BTEWorkflow(object):
             third_force_sets.append(pa_third.get_forces())
 
         phonon3.forces = third_force_sets
-        phonon3.produce_fc3(symmetrize_fc3r=True)
+        phonon3.produce_fc3(symmetrize_fc3r=True, is_compact_fc=False)
 
         # Save to file
         if self.save_fcs:
@@ -746,4 +746,3 @@ class BTEWorkflow(object):
 
         finally:
             os.chdir(current_path)
-
