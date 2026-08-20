@@ -414,9 +414,9 @@ and Kokkos CUDA support</p></li>
 <p><strong>1. Export the model</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">mattersim.lammps.mliap_wrapper</span><span class="w"> </span><span class="kn">import</span> <span class="n">MatterSimMLIAP</span>
 
-<span class="c1"># Choose your model: &quot;mattersim-v1.0.0-1M&quot; or &quot;mattersim-v1.0.0-5M&quot;</span>
-<span class="n">mliap</span> <span class="o">=</span> <span class="n">MatterSimMLIAP</span><span class="o">.</span><span class="n">from_checkpoint</span><span class="p">(</span><span class="s2">&quot;mattersim-v1.0.0-1M&quot;</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
-<span class="n">mliap</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;mattersim-v1.0.0-1M-mliap.pt&quot;</span><span class="p">)</span>
+<span class="c1"># Choose your model: "mattersim-v1.0.0-1M" or "mattersim-v1.0.0-5M"</span>
+<span class="n">mliap</span> <span class="o">=</span> <span class="n">MatterSimMLIAP</span><span class="o">.</span><span class="n">from_checkpoint</span><span class="p">(</span><span class="s2">"mattersim-v1.0.0-1M"</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">"cpu"</span><span class="p">)</span>
+<span class="n">mliap</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">"mattersim-v1.0.0-1M-mliap.pt"</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The checkpoint is downloaded automatically on first use.</p>
@@ -522,13 +522,13 @@ or use your own inputs, add <code class="docutils literal notranslate"><span cla
 mkdir<span class="w"> </span>/tmp/example<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>/tmp/example
 
 <span class="c1"># Export the model and copy the example input (one-time):</span>
-python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;</span>
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"</span>
 <span class="s2">from mattersim.lammps.mliap_wrapper import MatterSimMLIAP</span>
-<span class="s2">mliap = MatterSimMLIAP.from_checkpoint(&#39;mattersim-v1.0.0-5M&#39;)</span>
-<span class="s2">mliap.save(&#39;model.pt&#39;)</span>
+<span class="s2">mliap = MatterSimMLIAP.from_checkpoint('mattersim-v1.0.0-5M')</span>
+<span class="s2">mliap.save('model.pt')</span>
 <span class="s2">import shutil, mattersim.lammps.examples as e, os</span>
-<span class="s2">shutil.copy(os.path.join(os.path.dirname(e.__file__), &#39;cu_nve.in&#39;), &#39;.&#39;)</span>
-<span class="s2">&quot;</span>
+<span class="s2">shutil.copy(os.path.join(os.path.dirname(e.__file__), 'cu_nve.in'), '.')</span>
+<span class="s2">"</span>
 
 <span class="c1"># Run (single GPU):</span>
 lmp<span class="w"> </span>-in<span class="w"> </span>cu_nve.in<span class="w"> </span>-k<span class="w"> </span>on<span class="w"> </span>g<span class="w"> </span><span class="m">1</span><span class="w"> </span>-sf<span class="w"> </span>kk<span class="w"> </span><span class="se">\</span>

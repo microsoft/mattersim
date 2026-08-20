@@ -413,7 +413,7 @@ that we have a built-in workflow for phonon calculations using <code class="docu
 <section id="set-up-the-mattersim-calculator">
 <h2><span class="section-number">2.2. </span>Set up the MatterSim calculator<a class="headerlink" href="#set-up-the-mattersim-calculator" title="Link to this heading">#</a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="c1"># initialize the structure of silicon</span>
-<span class="linenos">2</span><span class="n">si</span> <span class="o">=</span> <span class="n">bulk</span><span class="p">(</span><span class="s2">&quot;Si&quot;</span><span class="p">)</span>
+<span class="linenos">2</span><span class="n">si</span> <span class="o">=</span> <span class="n">bulk</span><span class="p">(</span><span class="s2">"Si"</span><span class="p">)</span>
 <span class="linenos">3</span>
 <span class="linenos">4</span><span class="c1"># attach the calculator to the atoms object</span>
 <span class="linenos">5</span><span class="n">si</span><span class="o">.</span><span class="n">calc</span> <span class="o">=</span> <span class="n">MatterSimCalculator</span><span class="p">()</span>
@@ -425,7 +425,7 @@ that we have a built-in workflow for phonon calculations using <code class="docu
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="n">ph</span> <span class="o">=</span> <span class="n">PhononWorkflow</span><span class="p">(</span>
 <span class="linenos">2</span>    <span class="n">atoms</span><span class="o">=</span><span class="n">si</span><span class="p">,</span>
 <span class="linenos">3</span>    <span class="n">find_prim</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<span class="linenos">4</span>    <span class="n">work_dir</span> <span class="o">=</span> <span class="s2">&quot;/tmp/phonon_si_example&quot;</span><span class="p">,</span>
+<span class="linenos">4</span>    <span class="n">work_dir</span> <span class="o">=</span> <span class="s2">"/tmp/phonon_si_example"</span><span class="p">,</span>
 <span class="linenos">5</span>    <span class="n">amplitude</span> <span class="o">=</span> <span class="mf">0.01</span><span class="p">,</span>
 <span class="linenos">6</span>    <span class="n">supercell_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">([</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">]),</span>
 <span class="linenos">7</span><span class="p">)</span>
@@ -435,8 +435,8 @@ that we have a built-in workflow for phonon calculations using <code class="docu
 <section id="compute-the-phonon-dispersion">
 <h2><span class="section-number">2.4. </span>Compute the phonon dispersion<a class="headerlink" href="#compute-the-phonon-dispersion" title="Link to this heading">#</a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="n">has_imag</span><span class="p">,</span> <span class="n">phonons</span> <span class="o">=</span> <span class="n">ph</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
-<span class="linenos">2</span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Has imaginary phonon: </span><span class="si">{</span><span class="n">has_imag</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="linenos">3</span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Phonon frequencies: </span><span class="si">{</span><span class="n">phonons</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos">2</span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Has imaginary phonon: </span><span class="si">{</span><span class="n">has_imag</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="linenos">3</span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Phonon frequencies: </span><span class="si">{</span><span class="n">phonons</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
