@@ -218,13 +218,14 @@ class GraphConverter:
         atoms.set_scaled_positions(scaled_pos)
         args = {}
         if self.model_type == "m3gnet":
+            dtype = kwargs.get("dtype", torch.float32)
             args["num_atoms"] = len(atoms)
             args["num_nodes"] = len(atoms)
-            args["atom_attr"] = torch.FloatTensor(
-                atoms.get_atomic_numbers()
+            args["atom_attr"] = torch.tensor(
+                atoms.get_atomic_numbers(), dtype=dtype
             ).unsqueeze(-1)
-            args["atom_pos"] = torch.FloatTensor(atoms.get_positions())
-            args["cell"] = torch.FloatTensor(np.array(atoms.cell)).unsqueeze(0)
+            args["atom_pos"] = torch.tensor(atoms.get_positions(), dtype=dtype)
+            args["cell"] = torch.tensor(np.array(atoms.cell), dtype=dtype).unsqueeze(0)
             (
                 sent_index,
                 receive_index,
@@ -235,7 +236,7 @@ class GraphConverter:
             args["edge_index"] = torch.from_numpy(
                 np.array([sent_index, receive_index])
             )
-            args["pbc_offsets"] = torch.FloatTensor(shift_vectors)
+            args["pbc_offsets"] = torch.tensor(shift_vectors, dtype=dtype)
             if self.has_threebody:
                 (
                     triple_bond_index,
@@ -263,11 +264,11 @@ class GraphConverter:
                 args["num_three_body"] = None
                 args["num_triple_ij"] = None
             if energy is not None:
-                args["energy"] = torch.FloatTensor([energy])
+                args["energy"] = torch.tensor([energy], dtype=dtype)
             if forces is not None:
-                args["forces"] = torch.FloatTensor(forces)
+                args["forces"] = torch.tensor(forces, dtype=dtype)
             if stress is not None:
-                args["stress"] = torch.FloatTensor(stress).unsqueeze(0)
+                args["stress"] = torch.tensor(stress, dtype=dtype).unsqueeze(0)
             return M3GNetData(**args)
 
         elif self.model_type == "graphormer":

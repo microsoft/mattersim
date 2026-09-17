@@ -1355,6 +1355,7 @@ class MatterSimCalculator(Calculator):
                 cutoff=cutoff,
                 threebody_cutoff=threebody_cutoff,
                 batch_converter=self.batch_converter,
+                dtype=self.dtype,
                 **self.args_dict,
             )
             graph_batch = next(iter(dataloader))
