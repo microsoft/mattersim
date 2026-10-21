@@ -474,19 +474,29 @@ class AOTIModelWrapper(nn.Module):
         input: dict[str, torch.Tensor],
         dataset_idx: int = -1,
     ) -> dict[str, torch.Tensor]:
-        args = (
-            input["atom_pos"],
-            input["cell"],
-            input["pbc_offsets"],
-            input["atom_attr"],
-            input["edge_index"],
-            input["three_body_indices"],
-            input["num_three_body"],
-            input["num_bonds"],
-            input["num_triple_ij"],
-            input["num_atoms"],
-            input["num_graphs"],
-            input["batch"],
+        # The AOTI kernels are specialized to the contiguous strides of the
+        # compile-time example inputs and, unless AOTI_RUNTIME_CHECK_INPUTS is
+        # set, do not check strides at runtime.
+        # Non-contiguous inputs are silently misread: e.g. TorchSim's cell
+        # filters leave ``row_vector_cell`` as a transposed view, which gave
+        # stresses off by up to thousands of GPa. ``contiguous()`` is a no-op
+        # for inputs that already have the expected layout.
+        args = tuple(
+            input[key].contiguous()
+            for key in (
+                "atom_pos",
+                "cell",
+                "pbc_offsets",
+                "atom_attr",
+                "edge_index",
+                "three_body_indices",
+                "num_three_body",
+                "num_bonds",
+                "num_triple_ij",
+                "num_atoms",
+                "num_graphs",
+                "batch",
+            )
         )
         result = self._aoti_model(*args)
         output = {

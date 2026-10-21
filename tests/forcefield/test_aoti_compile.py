@@ -21,6 +21,7 @@ from mattersim.forcefield.aoti_compile import (
     _make_fx,
     _model_fingerprint,
 )
+from mattersim.forcefield.potential import batch_to_dict
 
 requires_gpu = pytest.mark.skipif(
     not torch.cuda.is_available(), reason="CUDA not available"
@@ -250,3 +251,49 @@ class TestAOTIMatchesEager:
         assert abs(e_ref[0] - e_aoti[0]) / len(atoms) < 1e-4
         np.testing.assert_allclose(f_aoti[0], f_ref[0], atol=1e-3)
         np.testing.assert_allclose(s_aoti[0], s_ref[0], atol=1e-2)
+
+    @pytest.mark.parametrize("cell_layout", ["contiguous", "transposed_view"])
+    def test_non_contiguous_cell_matches_eager(
+        self,
+        mattersim_potential_aoti,
+        mattersim_potential_best_device,
+        si_diamond_cubic,
+        perturb,
+        cell_layout,
+    ):
+        """Regression: AOTI misread a non-contiguous ``cell`` input.
+
+        TorchSim's cell filters store the column-vector cell, so the
+        ``row_vector_cell`` handed to the model is a transposed view with
+        strides ``(9, 1, 3)``. The artifact assumed the contiguous strides of
+        its compile-time example and returned stresses off by up to thousands
+        of GPa. A sheared (non-symmetric) cell is required: the transpose of
+        a symmetric cell has the same values in either layout.
+        """
+        atoms = perturb(si_diamond_cubic, displacement=0.05)
+        cell = atoms.cell.array.copy()
+        cell[1, 0] += 0.8
+        cell[2, 0] += 0.4
+        cell[2, 1] += 0.6
+        atoms.set_cell(cell, scale_atoms=True)
+
+        results = {}
+        for name, potential in (
+            ("eager", mattersim_potential_best_device),
+            ("aoti", mattersim_potential_aoti),
+        ):
+            graph_batch = next(iter(self._dataloader(atoms, potential)))
+            input_dict = batch_to_dict(graph_batch, device="cuda")
+            if name == "aoti" and cell_layout == "transposed_view":
+                input_dict["cell"] = input_dict["cell"].mT.contiguous().mT
+                assert not input_dict["cell"].is_contiguous()
+            output = potential(input_dict, include_forces=True, include_stresses=True)
+            results[name] = {
+                key: output[key].detach().cpu().numpy()
+                for key in ("total_energy", "forces", "stresses")
+            }
+
+        ref, aoti = results["eager"], results["aoti"]
+        assert abs(ref["total_energy"][0] - aoti["total_energy"][0]) / len(atoms) < 1e-4
+        np.testing.assert_allclose(aoti["forces"], ref["forces"], atol=1e-3)
+        np.testing.assert_allclose(aoti["stresses"], ref["stresses"], atol=1e-2)
