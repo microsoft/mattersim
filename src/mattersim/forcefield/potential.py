@@ -1169,7 +1169,7 @@ class MatterSimCalculator(Calculator):
     def __init__(
         self,
         potential: Potential = None,
-        args_dict: dict = {},
+        args_dict: Optional[dict] = None,
         compute_stress: bool = True,
         stress_weight: float = GPa,
         device: str = "cuda" if torch.cuda.is_available() else "cpu",
@@ -1223,7 +1223,9 @@ class MatterSimCalculator(Calculator):
             self.potential = potential
         self.compute_stress = compute_stress
         self.stress_weight = stress_weight
-        self.args_dict = args_dict
+        # calculate() writes batch settings into args_dict, so keep a private
+        # copy: a shared default or a caller-owned dict must never be mutated.
+        self.args_dict = dict(args_dict) if args_dict is not None else {}
         self.device = device
         self.batch_converter = batch_converter
         self._use_direct_graph = direct_graph or compile
@@ -1289,7 +1291,7 @@ class MatterSimCalculator(Calculator):
         device: str = "cuda" if torch.cuda.is_available() else "cpu",
         args: Dict = None,
         load_training_state: bool = True,
-        args_dict: dict = {},
+        args_dict: Optional[dict] = None,
         compute_stress: bool = True,
         stress_weight: float = GPa,
         **kwargs,
