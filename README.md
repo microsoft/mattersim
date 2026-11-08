@@ -153,7 +153,7 @@ We kindly request that users of MatterSim version 1.0.0 cite our preprint availa
 
 ## Limitations
 
-**MatterSim-v1** is designed specifically for atomistic simulations of bulk materials. Applications or interpretations beyond this scope should be approached with caution. For instance, when using the model for simulations involving surfaces, interfaces, or properties influenced by long-range interactions, the results may be qualitatively accurate but are not suitable for quantitative analysis. In such cases, we recommend fine-tuning the model to better align with the specific application.
+**MatterSim-v1** is designed specifically for atomistic simulations of bulk materials. Applications or interpretations beyond this scope should be approached with caution. For instance, when using the model for simulations involving surfaces, interfaces, or properties influenced by long-range interactions, the results may be qualitatively accurate but are not suitable for quantitative analysis. For mixed-periodicity inputs, graph construction wraps coordinates only along periodic cell directions; this does not establish model accuracy for non-bulk systems. In such cases, we recommend fine-tuning the model to better align with the specific application.
 
 ## Trademarks
 

@@ -213,9 +213,7 @@ class GraphConverter:
         else:
             raise ValueError("structure type not supported")
 
-        scaled_pos = atoms.get_scaled_positions()
-        scaled_pos = np.mod(scaled_pos, 1)
-        atoms.set_scaled_positions(scaled_pos)
+        atoms.wrap()
         args = {}
         if self.model_type == "m3gnet":
             args["num_atoms"] = len(atoms)
