@@ -38,7 +38,7 @@ def auto_grid_detection(
         == lattice_vector_lengths[1]
         == lattice_vector_lengths[2]
     ):
-        number_of_replicas = int(np.round(max_atoms / (len(atom))) ** (1 / 3))
+        number_of_replicas = int(np.round((max_atoms / len(atom)) ** (1 / 3)))
         number_of_replicas = max(number_of_replicas, 1)
         max_replication = (
             number_of_replicas,
@@ -62,7 +62,7 @@ def auto_grid_detection(
         # Variation in cell length with in the tolerance we still consider it
         # as an N-N-N replications
         if ratios[0] <= ratio_tolerance and ratios[1] <= ratio_tolerance:
-            number_of_replicas = int(np.round(max_atoms / (len(atom))) ** (1 / 3))
+            number_of_replicas = int(np.round((max_atoms / len(atom)) ** (1 / 3)))
             number_of_replicas = max(number_of_replicas, 1)
             max_replication = (
                 number_of_replicas,
@@ -74,7 +74,7 @@ def auto_grid_detection(
         else:
             # Compute the replica along the most asymmetric direction
             asymmetric_replica = int(
-                (max_atoms / len(atom) / np.prod(ratios)) ** (1 / 3)
+                np.round((max_atoms / len(atom) / np.prod(ratios)) ** (1 / 3))
             )
             asymmetric_replica = max(asymmetric_replica, 1)
 
