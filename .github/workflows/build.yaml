@@ -44,3 +44,7 @@ jobs:
 
     - name: Run tests
       run: uv run --python ${{ matrix.python-version }} --extra dev pytest -v tests --disable-warnings -m "not slow"
+
+    - name: Check batch relaxation with minimum supported ASE
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+      run: uv run --python ${{ matrix.python-version }} --extra dev --with 'ase==3.23.0' pytest -v tests/applications/test_batch_relax.py -k cpu

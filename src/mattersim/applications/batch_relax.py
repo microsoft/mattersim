@@ -122,10 +122,12 @@ class BatchRelaxer(object):
 
                 opt.step()
                 opt.nsteps += 1
-                # Get gradient for convergence check
-                # Note: gradient = -forces for the optimizable object
-                gradient = opt.optimizable.get_gradient()
-                if opt.converged(gradient) or opt.nsteps >= self.max_n_steps:
+                # ASE 3.26 changed convergence input from forces to gradients.
+                if hasattr(opt.optimizable, "get_gradient"):
+                    converged = opt.converged(opt.optimizable.get_gradient())
+                else:
+                    converged = opt.converged()
+                if converged or opt.nsteps >= self.max_n_steps:
                     self.is_active_instance[idx] = False
                     self.total_converged += 1
                     if self.total_converged % 100 == 0:
