@@ -1,13 +1,67 @@
 """Tests for the Relaxer class."""
 
+import csv
+import gzip
+
 import numpy as np
 import pytest
 from ase import Atoms
 from ase.calculators.lj import LennardJones
+from ase.optimize import BFGS, FIRE
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
 from mattersim.applications.relax import Relaxer
+from mattersim.cli.applications.relax import relax as run_relaxation
+
+
+@pytest.mark.parametrize("optimizer", [FIRE, BFGS])
+@pytest.mark.parametrize(
+    "distance,steps,fmax,expected",
+    [
+        (2 ** (1 / 6), 0, 0.01, True),
+        (1.0, 1, 5.0, True),
+        (1.0, 1, 0.01, False),
+        (1.0, 0, 0.01, False),
+        (2 ** (1 / 6), 5, 0.01, True),
+    ],
+    ids=[
+        "initial-convergence", "final-step", "step-limit", "no-steps", "early-convergence"
+    ],
+)
+def test_relaxation_termination(optimizer, distance, steps, fmax, expected):
+    atoms = Atoms("Ar2", positions=[[0, 0, 0], [distance, 0, 0]])
+    atoms.calc = LennardJones()
+    control = atoms.copy()
+    control.calc = LennardJones()
+    optimizer(control, logfile=None).run(fmax=fmax, steps=steps)
+
+    converged, relaxed = Relaxer(
+        optimizer=optimizer.__name__, constrain_symmetry=False
+    ).relax(atoms, fmax=fmax, steps=steps, verbose=False)
+    if converged is not expected:
+        pytest.fail(f"Expected convergence={expected}, received {converged!r}")
+    if not np.array_equal(relaxed.positions, control.positions):
+        pytest.fail("Relaxation changed the optimizer's final positions")
+
+
+def test_final_step_convergence_reaches_csv(tmp_path):
+    atoms = Atoms(
+        "Ar2", positions=[[0, 0, 0], [1.0, 0, 0]], cell=[10, 10, 10], pbc=True
+    )
+    atoms.calc = LennardJones()
+    results = run_relaxation(
+        [atoms],
+        optimizer="BFGS",
+        constrain_symmetry=False,
+        steps=1,
+        fmax=5.0,
+        work_dir=str(tmp_path),
+    )
+    with gzip.open(tmp_path / "results.csv.gz", "rt") as stream:
+        rows = list(csv.DictReader(stream))
+    if results["converged"] != [True] or [row["converged"] for row in rows] != ["True"]:
+        pytest.fail("Final-step convergence did not reach the returned results and CSV")
 
 
 class TestRelaxer:

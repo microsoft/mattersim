@@ -107,9 +107,7 @@ class Relaxer(object):
         stream = sys.stdout if verbose else io.StringIO()
         with contextlib.redirect_stdout(stream):
             optimizer = self.optimizer(ecf, **kwargs)
-            optimizer.run(fmax=fmax, steps=steps)
-
-        converged = optimizer.get_number_of_steps() < steps
+            converged = bool(optimizer.run(fmax=fmax, steps=steps))
 
         if self.constrain_symmetry:
             atoms.set_constraint(None)
