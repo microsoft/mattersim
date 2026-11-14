@@ -159,3 +159,90 @@ class TestRelaxerVerbose:
         )
         assert isinstance(converged, bool)
         assert relaxed is not None
+
+
+@pytest.mark.parametrize("optimizer", ["FIRE", "BFGS"])
+@pytest.mark.parametrize("filter_name", [None, "ExpCellFilter", "FrechetCellFilter"])
+@pytest.mark.parametrize("constrain_symmetry", [False, True])
+def test_constraint_lifecycle_scenarios(optimizer, filter_name, constrain_symmetry):
+    from ase.constraints import FixAtoms, FixCartesian
+
+    atoms = Atoms("Ar2", positions=[[0, 0, 0], [1, 0, 0]], cell=[10, 10, 10], pbc=True)
+    atoms.calc = LennardJones()
+    constraints = [FixAtoms(indices=[0]), FixCartesian(1, mask=[False, True, True])]
+    original_constraints = tuple(constraints)
+    atoms.set_constraint(constraints)
+    initial_fixed_position = atoms.positions[0].copy()
+    relaxer = Relaxer(
+        optimizer=optimizer, filter=filter_name, constrain_symmetry=constrain_symmetry
+    )
+
+    for _ in range(2):
+        _, relaxed = relaxer.relax(
+            atoms, steps=1, fmax=0.01, verbose=False, maxstep=0.05
+        )
+        if (
+            relaxed is not atoms
+            or atoms.constraints is not constraints
+            or tuple(atoms.constraints) != original_constraints
+        ):
+            pytest.fail("Relaxation replaced the caller's atoms or constraint list")
+        if not np.allclose(atoms.positions[0], initial_fixed_position, atol=1e-12):
+            pytest.fail("Relaxation moved the fixed atom")
+        if atoms.positions[1, 0] <= 1.0:
+            pytest.fail("Relaxation did not move the unconstrained coordinate")
+        if not np.allclose(atoms.get_forces()[0], 0.0, atol=1e-12):
+            pytest.fail("The original force constraint no longer applies")
+
+    proposed_positions = atoms.positions.copy()
+    proposed_positions[0] += 0.5
+    atoms.set_positions(proposed_positions)
+    if not np.allclose(atoms.positions[0], initial_fixed_position, atol=1e-12):
+        pytest.fail("The fixed-position constraint was lost after relaxation")
+
+
+@pytest.mark.parametrize("failure_stage", ["filter", "optimizer", "forces"])
+@pytest.mark.parametrize("has_constraint", [False, True])
+def test_constraint_failure_recovery_scenarios(failure_stage, has_constraint):
+    from ase.calculators.calculator import PropertyNotImplementedError
+    from ase.calculators.singlepoint import SinglePointCalculator
+    from ase.constraints import FixAtoms
+
+    atoms = Atoms("Ar2", positions=[[0, 0, 0], [1, 0, 0]], cell=[10, 10, 10], pbc=True)
+    constraints = [FixAtoms(indices=[0])] if has_constraint else []
+    original_constraints = tuple(constraints)
+    atoms.set_constraint(constraints)
+    atoms.calc = LennardJones()
+    relaxer = Relaxer(optimizer="BFGS", filter="FrechetCellFilter")
+    kwargs = {}
+    expected_error = TypeError
+    if failure_stage == "filter":
+        kwargs["params_filter"] = {"invalid_filter_parameter": True}
+    elif failure_stage == "optimizer":
+        kwargs["invalid_optimizer_parameter"] = True
+    else:
+        atoms.calc = SinglePointCalculator(atoms, energy=0.0)
+        expected_error = PropertyNotImplementedError
+
+    try:
+        relaxer.relax(atoms, steps=1, fmax=0.01, verbose=False, maxstep=0.05, **kwargs)
+    except expected_error:
+        pass
+    else:
+        pytest.fail(f"The {failure_stage} failure did not reach the caller")
+    if (
+        atoms.constraints is not constraints
+        or tuple(atoms.constraints) != original_constraints
+    ):
+        pytest.fail(f"The {failure_stage} failure left temporary constraints attached")
+
+    atoms.calc = LennardJones()
+    _, relaxed = relaxer.relax(atoms, steps=1, fmax=0.01, verbose=False, maxstep=0.05)
+    if (
+        relaxed is not atoms
+        or atoms.constraints is not constraints
+        or tuple(atoms.constraints) != original_constraints
+    ):
+        pytest.fail("Retry did not preserve the caller's atoms and constraints")
+    if has_constraint and not np.allclose(atoms.positions[0], 0.0, atol=1e-12):
+        pytest.fail("Retry moved the fixed atom")

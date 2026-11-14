@@ -46,3 +46,7 @@ MatterSim implements a built-in relaxation class to support the relaxation of as
     )
 
     relaxed_structure = relaxer.relax(si, steps=500)
+
+When ``constrain_symmetry=True``, existing ASE constraints are applied after the
+temporary symmetry constraint, in their original order. The original constraint
+list is restored when relaxation returns or raises an exception.

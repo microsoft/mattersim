@@ -76,43 +76,46 @@ class Relaxer(object):
         if atoms.calc is None:
             raise ValueError("Atoms object must have a calculator.")
 
-        if self.constrain_symmetry:
-            atoms.set_constraint(FixSymmetry(atoms))
+        original_constraints = atoms.constraints
+        try:
+            if self.constrain_symmetry:
+                # Apply caller constraints after the symmetry projection.
+                atoms.set_constraint([FixSymmetry(atoms), *original_constraints])
 
-        if self.relax_cell:
-            # Set the mask for the fixed axis
-            if isinstance(self.fix_axis, bool):
-                mask = [not self.fix_axis for i in range(6)]
+            if self.relax_cell:
+                # Set the mask for the fixed axis
+                if isinstance(self.fix_axis, bool):
+                    mask = [not self.fix_axis for i in range(6)]
+                else:
+                    assert (
+                        len(self.fix_axis) == 6
+                    ), "The length of fix_axis list not equal 6."
+                    mask = [not elem for elem in self.fix_axis]
+
+                # check if the scalar_pressure is provided
+                if (
+                    "scalar_pressure" in params_filter
+                    and params_filter["scalar_pressure"] > 1
+                ):
+                    warnings.warn(
+                        "The scalar_pressure used in ExpCellFilter assumes "
+                        "eV/A^3 unit and 1 eV/A^3 is already 160 GPa. "
+                        "Please make sure you have converted your pressure "
+                        "from GPa to eV/A^3 by dividing by 160.21766208."
+                    )
+                ecf = self.filter(atoms, mask=mask, **params_filter)
             else:
-                assert (
-                    len(self.fix_axis) == 6
-                ), "The length of fix_axis list not equal 6."
-                mask = [not elem for elem in self.fix_axis]
+                ecf = atoms
 
-            # check if the scalar_pressure is provided
-            if (
-                "scalar_pressure" in params_filter
-                and params_filter["scalar_pressure"] > 1
-            ):
-                warnings.warn(
-                    "The scalar_pressure used in ExpCellFilter assumes "
-                    "eV/A^3 unit and 1 eV/A^3 is already 160 GPa. "
-                    "Please make sure you have converted your pressure "
-                    "from GPa to eV/A^3 by dividing by 160.21766208."
-                )
-            ecf = self.filter(atoms, mask=mask, **params_filter)
-        else:
-            ecf = atoms
+            stream = sys.stdout if verbose else io.StringIO()
+            with contextlib.redirect_stdout(stream):
+                optimizer = self.optimizer(ecf, **kwargs)
+                optimizer.run(fmax=fmax, steps=steps)
 
-        stream = sys.stdout if verbose else io.StringIO()
-        with contextlib.redirect_stdout(stream):
-            optimizer = self.optimizer(ecf, **kwargs)
-            optimizer.run(fmax=fmax, steps=steps)
-
-        converged = optimizer.get_number_of_steps() < steps
-
-        if self.constrain_symmetry:
-            atoms.set_constraint(None)
+            converged = optimizer.get_number_of_steps() < steps
+        finally:
+            if self.constrain_symmetry:
+                atoms.set_constraint(original_constraints)
 
         return converged, atoms
 
