@@ -14,6 +14,16 @@ from mattersim.cli.applications.singlepoint import singlepoint
 from mattersim.forcefield import MatterSimCalculator
 
 
+class FixAxisAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        if len(values) not in (1, 6) or any(
+            value.lower() not in ("true", "false") for value in values
+        ):
+            raise argparse.ArgumentError(self, "Expected one or six True/False values.")
+        fixed = [value.lower() == "true" for value in values]
+        setattr(namespace, self.dest, fixed[0] if len(fixed) == 1 else fixed)
+
+
 def singlepoint_cli(args: argparse.Namespace) -> dict:
     """
     CLI wrapper for singlepoint function.
@@ -159,10 +169,11 @@ def add_relax_args(parser: argparse.ArgumentParser):
     )
     parser.add_argument(
         "--fix-axis",
-        type=bool,
+        action=FixAxisAction,
         default=False,
         nargs="+",
-        help="Fix the axis.",
+        help="Fix all cell axes with True or False, or supply six booleans "
+        "in xx yy zz yz xz xy order.",
     )
     parser.add_argument(
         "--pressure-in-GPa",
