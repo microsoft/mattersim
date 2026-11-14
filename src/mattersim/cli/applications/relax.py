@@ -38,7 +38,8 @@ def relax(
         filter (Union[str, Filter, None]): The filter to use.
         constrain_symmetry (bool): Whether to constrain symmetry. Default is False.
         fix_axis (Union[bool, List[bool]]): Whether to fix the axis. Default is False.
-        pressure_in_GPa (float): Pressure in GPa to use for relaxation.
+        pressure_in_GPa (float): External pressure in GPa. An explicit value,
+            including zero, enables cell relaxation. None uses the selected filter.
         fmax (float): Maximum force tolerance for relaxation. Default is 0.01.
         steps (int): Maximum number of steps for relaxation. Default is 500.
         work_dir (str): Working directory for the calculations.
@@ -50,7 +51,7 @@ def relax(
     """
     params_filter = {}
 
-    if pressure_in_GPa:
+    if pressure_in_GPa is not None:
         params_filter["scalar_pressure"] = (
             pressure_in_GPa * GPa
         )  # convert GPa to eV/Angstrom^3
