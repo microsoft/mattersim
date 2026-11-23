@@ -1263,8 +1263,13 @@ class MatterSimCalculator(Calculator):
         if "dtype" not in self.__dict__:
             self.dtype = torch.float32
 
-        # Rebuild potential for inference only
-        self.potential = Potential.from_checkpoint(device=self.device)
+        # Rebuild the same architecture for inference only.
+        model = M3Gnet(device=self.device, **model_args).to(self.device)
+        self.potential = Potential(
+            model=model,
+            device=self.device,
+            model_name=model_name,
+        )
         if self.dtype == torch.float64:
             self.potential.model.double()
         self.potential.model.load_state_dict(model_state_dict)
