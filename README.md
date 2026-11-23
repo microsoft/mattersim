@@ -44,6 +44,14 @@ To install MatterSim, use the following command. Please note that downloading th
 pip install mattersim
 ```
 
+Optional workflows use extras so the core calculator installation stays small:
+
+```bash
+pip install "mattersim[phonon]"             # phonopy-based phonon workflows
+pip install "mattersim[bte]"                # phono3py-based thermal transport
+pip install "mattersim[materials-project]"  # Materials Project structure lookup
+```
+
 In case you want to install the package with the latest version, you can run the following command:
 
 ```bash

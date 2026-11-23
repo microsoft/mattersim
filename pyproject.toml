@@ -32,16 +32,11 @@ dependencies = [
     "scikit-learn",
     "deprecated",
     "e3nn>=0.5.0",
-    "atomate2",
     "loguru",
-    "mp-api",
     "numpy>=2.0.0",
     "opt_einsum_fx",
     "pydantic>=2.9.2",
     "pymatgen",
-    "seekpath",
-    "phonopy",
-    "phono3py",
     "torch-ema>=0.3",
     "torch>=2.2.0",
     "torch_geometric>=2.5.3",
@@ -58,10 +53,14 @@ dependencies = [
 dev = [
     "ipykernel",
     "ipython",
+    "mp-api",
     "pre-commit",
+    "phono3py",
+    "phonopy",
     "pytest",
     "pytest-cov",
     "pytest-testmon",
+    "seekpath",
 ]
 
 docs = [
@@ -74,6 +73,10 @@ docs = [
     "sphinx-copybutton",
     "sphinx-design",
 ]
+
+materials-project = ["mp-api"]
+phonon = ["phonopy", "seekpath"]
+bte = ["phono3py"]
 
 
 [project.urls]

@@ -8,7 +8,6 @@ from ase.io import read as ase_read
 from loguru import logger
 
 from mattersim.cli.applications.moldyn import moldyn
-from mattersim.cli.applications.phonon import phonon
 from mattersim.cli.applications.relax import relax
 from mattersim.cli.applications.singlepoint import singlepoint
 from mattersim.forcefield import MatterSimCalculator
@@ -67,6 +66,8 @@ def phonon_cli(args: argparse.Namespace) -> dict:
     Returns:
         dict: Dictionary containing the phonon properties.
     """
+    from mattersim.cli.applications.phonon import phonon
+
     atoms_list = parse_atoms_list(
         args.structure_file, args.mattersim_model, args.device
     )
