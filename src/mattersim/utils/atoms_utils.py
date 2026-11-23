@@ -3,7 +3,6 @@ import os
 
 from ase import Atoms
 from ase.io import read as ase_read
-from mp_api.client import MPRester
 from pymatgen.core.structure import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 
@@ -57,6 +56,8 @@ class AtomsAdaptor(object):
                 " Materials Project, but was not found in the"
                 " environment variables or provided."
             )
+        from mp_api.client import MPRester
+
         with MPRester(mp_api_key) as m:
             structure = m.get_structure_by_material_id(mp_id)
             return AseAtomsAdaptor.get_atoms(structure, msonable=False)
